@@ -110,26 +110,26 @@ class _LeaveState extends State<Leave> {
   }
 
 
-
   Future<void> sendUserDataToDB() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     var currentUser = _auth.currentUser;
 
-    var timestamp = FieldValue.serverTimestamp();
-
+    // Reference to the user's leave data document in Firestore
     CollectionReference userLeaveCollection = FirebaseFirestore.instance
         .collection("users-leave-data")
         .doc(currentUser!.email)
-        .collection("leave-requests");
+        .collection("leave-requests");  // Subcollection for leave requests
 
+    // Create a new document with the user's email as the ID (don't use auto ID)
     try {
-      await userLeaveCollection.doc(timestamp.toString()).set({
+      await userLeaveCollection.doc().set({
         "From date": _fromdateController.text,
         "To date": _todateController.text,
         "Reason": _reasonController.text,
-        "submittedAt": timestamp,
+        "submittedAt": FieldValue.serverTimestamp(),  // Add timestamp for submission
       });
 
+      // Optionally, show success message or toast
       Fluttertoast.showToast(
         msg: "Leave request submitted successfully!",
         toastLength: Toast.LENGTH_SHORT,
