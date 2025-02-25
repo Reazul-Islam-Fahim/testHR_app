@@ -1,1 +1,1 @@
-TestHR Applicayion for mobile
+TestHR Application for mobile
