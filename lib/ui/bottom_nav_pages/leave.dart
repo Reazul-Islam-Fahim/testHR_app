@@ -1,8 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:test_app/const/AppColors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../const/AppColors.dart';
+import '../apply_leave.dart';
 
 class Leave extends StatefulWidget {
   const Leave({super.key});
@@ -12,247 +13,240 @@ class Leave extends StatefulWidget {
 }
 
 class _LeaveState extends State<Leave> {
-  final TextEditingController _fromdateController = TextEditingController();
-  final TextEditingController _todateController = TextEditingController();
-  final TextEditingController _reasonController = TextEditingController();
+  List<Map<String, dynamic>> leaveData = [];
 
-  final _formKey = GlobalKey<FormState>();
-
-  // Submit method to handle form submission
-  void _submitForm() async {
-    try {
-      // Validate the form
-      if (_formKey.currentState!.validate()) {
-        // Form is valid, proceed with submission
-        String fromDate = _fromdateController.text;
-        String toDate = _todateController.text;
-        String reason = _reasonController.text;
-
-
-        debugPrint('Date: $fromDate');
-        debugPrint('Date: $toDate');
-        debugPrint('Reason: $reason');
-
-        // Simulate a form submission with a delay (e.g., API call)
-        await Future.delayed(Duration(seconds: 2));
-
-        // Send data to DB
-        await sendUserDataToDB();
-
-        // Show a success toast if submission is successful
-        Fluttertoast.showToast(
-          msg: "Submission Successful!",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
-        // Reset the form fields to refresh the page
-        setState(() {
-          _formKey.currentState!.reset();
-          _fromdateController.clear();
-          _todateController.clear();
-          _reasonController.clear();
-        });
-      }
-    } catch (e) {
-      // Catch any errors that occur during form submission
-      debugPrint('Error occurred during submission: $e');
-
-      // Show a toast with an error message
-      Fluttertoast.showToast(
-        msg: "Submission Failed: $e",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-    }
-  }
-
-
-  Future<void> _selectFromDateFromPicker(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(DateTime.now().year),
-      firstDate: DateTime(DateTime.now().year - 3),
-      lastDate: DateTime(DateTime.now().year + 3),
-    );
-    if (picked != null){
-      setState(() {
-        _fromdateController.text =
-        "${picked.day}/ ${picked.month}/ ${picked.year}";
-      });
-    }
-  }
-
-
-
-
-  Future<void> _selectToDateFromPicker(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(DateTime.now().year),
-      firstDate: DateTime(DateTime.now().year - 30),
-      lastDate: DateTime(DateTime.now().year + 30),
-    );
-    if (picked != null){
-      setState(() {
-        _todateController.text =
-        "${picked.day}/ ${picked.month}/ ${picked.year}";
-      });
-    }
-  }
-
-
-  Future<void> sendUserDataToDB() async {
+  Future<void> _fetchLeaveData() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     var currentUser = _auth.currentUser;
 
-    // Reference to the user's leave data document in Firestore
-    CollectionReference userLeaveCollection = FirebaseFirestore.instance
-        .collection("users-leave-data")
-        .doc(currentUser!.email)
-        .collection("leave-requests");  // Subcollection for leave requests
-
-    // Create a new document with the user's email as the ID (don't use auto ID)
     try {
-      await userLeaveCollection.doc().set({
-        "From date": _fromdateController.text,
-        "To date": _todateController.text,
-        "Reason": _reasonController.text,
-        "submittedAt": FieldValue.serverTimestamp(),  // Add timestamp for submission
+      CollectionReference leaveCollection = FirebaseFirestore.instance
+          .collection("users-leave-data")
+          .doc(currentUser!.email)
+          .collection("leave-requests");
+
+      QuerySnapshot querySnapshot = await leaveCollection.get();
+      leaveData.clear();
+
+      querySnapshot.docs.forEach((doc) {
+        // Include the document ID as part of the data
+        Map<String, dynamic> leave = doc.data() as Map<String, dynamic>;
+        leave['id'] = doc.id; // Save the document ID
+        leaveData.add(leave);
       });
 
-      // Optionally, show success message or toast
-      Fluttertoast.showToast(
-        msg: "Leave request submitted successfully!",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+      setState(() {});
     } catch (e) {
-      // Handle any errors
-      Fluttertoast.showToast(
-        msg: "Submission failed: $e",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-      debugPrint('Error occurred during submission: $e');
+      print("Error fetching data: $e");
     }
   }
 
+  // Function to update the leave data in Firestore
+  Future<void> _updateLeaveData(
+      String documentId, String field, String newValue) async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    var currentUser = _auth.currentUser;
 
+    try {
+      CollectionReference leaveCollection = FirebaseFirestore.instance
+          .collection("users-leave-data")
+          .doc(currentUser!.email)
+          .collection("leave-requests");
 
+      // Update the specific field in the Firestore document
+      await leaveCollection.doc(documentId).update({field: newValue});
+
+      // Show a success toast or dialog
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Data updated successfully')));
+    } catch (e) {
+      debugPrint("Error updating data: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLeaveData(); // Fetch data when the widget is initialized
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Center(
-            child: Text(
-              'Apply fro leave',
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Center(
+          child: Text(
+            'Leave Report',
           ),
-          backgroundColor: AppColors.deep_orange,
-          automaticallyImplyLeading: false,
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                TextFormField(
-                  controller: _fromdateController,
-                  decoration: InputDecoration(
-                    labelText: 'Leave Start Date',
-                    border: OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      onPressed: () => _selectFromDateFromPicker(context),
-                      icon: Icon(Icons.calendar_today_outlined),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select the leave date';
-                    }
-                    return null;
-                  },
-                ),
+        backgroundColor: AppColors.deep_orange,
+        automaticallyImplyLeading: false,
+      ),
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start, // Align content to the top
+          children: [
+            FittedBox(
+              fit: BoxFit.contain,
+              child: leaveData.isEmpty
+                  ? CircularProgressIndicator()
+                  : DataTable(
+                headingRowHeight: 100,
+                columns: const [
+                  DataColumn(label: Text('From Date')),
+                  DataColumn(label: Text('To Date')),
+                  DataColumn(label: Text('Reason')),
+                  DataColumn(label: Text('Status')),
+                ],
+                rows: leaveData.map((leave) {
+                  return DataRow(cells: [
+                    DataCell(Text(leave['From date'] ?? ''), onTap: () async {
+                      TextEditingController controller =
+                      TextEditingController(text: leave['From date']);
+                      String newFromDate = await showDialog<String>(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text('Edit From Date'),
+                            content: TextField(
+                              controller: controller,
+                              decoration: InputDecoration(
+                                  hintText: 'Enter new date'),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text('Cancel'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              TextButton(
+                                child: Text('Update'),
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(controller.text);
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ) ??
+                          '';
 
-                SizedBox(height: 16),
+                      if (newFromDate.isNotEmpty) {
+                        setState(() {
+                          leave['From date'] = newFromDate;
+                        });
+                        // Update the Firestore data
+                        await _updateLeaveData(
+                            leave['id'], 'From date', newFromDate);
+                      }
+                    }),
+                    DataCell(Text(leave['To date'] ?? ''), onTap: () async {
+                      TextEditingController controller =
+                      TextEditingController(text: leave['To date']);
+                      String newToDate = await showDialog<String>(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text('Edit To Date'),
+                            content: TextField(
+                              controller: controller,
+                              decoration: InputDecoration(
+                                  hintText: 'Enter new date'),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text('Cancel'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              TextButton(
+                                child: Text('Update'),
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(controller.text);
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ) ??
+                          '';
 
-                TextFormField(
-                  controller: _todateController,
-                  decoration: InputDecoration(
-                    labelText: 'Leave End Date',
-                    border: OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      onPressed: () => _selectToDateFromPicker(context),
-                      icon: Icon(Icons.calendar_today_outlined),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your last day of leave';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
+                      if (newToDate.isNotEmpty) {
+                        setState(() {
+                          leave['To date'] = newToDate;
+                        });
+                        // Update the Firestore data
+                        await _updateLeaveData(
+                            leave['id'], 'To date', newToDate);
+                      }
+                    }),
+                    DataCell(Text(leave['Reason'] ?? ''), onTap: () async {
+                      TextEditingController controller =
+                      TextEditingController(text: leave['Reason']);
+                      String newReason = await showDialog<String>(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text('Edit Reason'),
+                            content: TextField(
+                              controller: controller,
+                              decoration: InputDecoration(
+                                  hintText: 'Enter new reason'),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text('Cancel'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              TextButton(
+                                child: Text('Update'),
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(controller.text);
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ) ??
+                          '';
 
-                TextFormField(
-                  controller: _reasonController,
-                  decoration: InputDecoration(
-                    labelText: 'Reason for Leave',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please provide a reason for your leave';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 20),
-
-                // Submit button
-                ElevatedButton(
-                  onPressed: () {
-                    _submitForm(); // First function
-                    // sendUserDataToDB(); // Second function
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.deep_orange,
-                    padding: EdgeInsets.symmetric(vertical: 14.0),
-                    textStyle: TextStyle(fontSize: 16),
-                  ),
-                  child: Text(
-                    'Submit',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                )
-
-              ],
+                      if (newReason.isNotEmpty) {
+                        setState(() {
+                          leave['Reason'] = newReason;
+                        });
+                        // Update the Firestore data
+                        await _updateLeaveData(
+                            leave['id'], 'Reason', newReason);
+                      }
+                    }),
+                    DataCell(Text('Pending')),
+                  ]);
+                }).toList(),
+              ),
             ),
+          ],
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Align(
+          alignment: Alignment.bottomRight, // Align the button to the bottom-right
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                CupertinoPageRoute(builder: (context) => Leave_apply()),
+              );
+            },
+            backgroundColor: AppColors.deep_orange, // Add color to the button
+            child: Icon(Icons.add), // Add a plus icon
           ),
         ),
       ),
