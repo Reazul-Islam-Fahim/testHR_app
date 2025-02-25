@@ -64,6 +64,36 @@ class _LeaveState extends State<Leave> {
     }
   }
 
+
+  // Function to delete the leave data from Firestore
+  Future<void> _deleteLeaveData(String documentId) async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    var currentUser = _auth.currentUser;
+
+    try {
+      CollectionReference leaveCollection = FirebaseFirestore.instance
+          .collection("users-leave-data")
+          .doc(currentUser!.email)
+          .collection("leave-requests");
+
+      // Delete the Firestore document
+      await leaveCollection.doc(documentId).delete();
+
+      // Show a success toast or dialog
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Leave request deleted successfully')));
+
+      // Remove the deleted leave from the local list and refresh the UI
+      setState(() {
+        leaveData.removeWhere((leave) => leave['id'] == documentId);
+      });
+    } catch (e) {
+      debugPrint("Error deleting data: $e");
+    }
+  }
+
+
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +127,7 @@ class _LeaveState extends State<Leave> {
                   DataColumn(label: Text('To Date')),
                   DataColumn(label: Text('Reason')),
                   DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Actions')), // Add actions column
                 ],
                 rows: leaveData.map((leave) {
                   return DataRow(cells: [
@@ -227,6 +258,42 @@ class _LeaveState extends State<Leave> {
                       }
                     }),
                     DataCell(Text('Pending')),
+                    // Add the delete button
+                    DataCell(IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () async {
+                        // Show a confirmation dialog before deleting
+                        bool confirmDelete = await showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text('Delete Leave Request'),
+                              content: Text(
+                                  'Are you sure you want to delete this leave request?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(true);
+                                  },
+                                  child: Text('Yes'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(false);
+                                  },
+                                  child: Text('No'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (confirmDelete) {
+                          // Delete the record from Firestore
+                          await _deleteLeaveData(leave['id']);
+                        }
+                      },
+                    )),
                   ]);
                 }).toList(),
               ),
