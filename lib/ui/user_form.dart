@@ -66,7 +66,7 @@ class _UserFormState extends State<UserForm> {
                 Text(
                   "Submit the form to continue.",
                   style:
-                  TextStyle(fontSize: 22.sp, color: AppColors.deep_orange),
+                  TextStyle(fontSize: 22.sp, color: AppColors.blue),
                 ),
                 Text(
                   "We will not share your information with anyone.",
@@ -99,13 +99,13 @@ class _UserFormState extends State<UserForm> {
                     suffixIcon: DropdownButton<String>(
                       items: gender.map((String value) {
                         return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                          onTap: () {
-                            setState(() {
-                              _genderController.text = value;
-                            });
-                          },
+                        value: value,
+                        child: Text(value),
+                        onTap: () {
+                        setState(() {
+                        _genderController.text = value;
+                        });
+                        },
                         );
                       }).toList(),
                       onChanged: (_) {},
