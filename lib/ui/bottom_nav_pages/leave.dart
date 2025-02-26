@@ -146,7 +146,7 @@ class _LeaveState extends State<Leave> {
                   rows: leaveData.map((leave) {
                     return DataRow(cells: [
                       DataCell(
-                        Text(leave['Start date'] ?? ''),
+                        Text(leave['Start Date'] ?? ''),
                         onTap: leave['status'] == 'Pending' ? () async {
                           TextEditingController controller = TextEditingController(text: leave['Start Date']);
                           String newFromDate = await showDialog<String>(
@@ -185,7 +185,7 @@ class _LeaveState extends State<Leave> {
                         } : null, // Only allow editing if status is 'Pending'
                       ),
                       DataCell(
-                        Text(leave['End date'] ?? ''),
+                        Text(leave['End Date'] ?? ''),
                         onTap: leave['status'] == 'Pending' ? () async {
                           TextEditingController controller = TextEditingController(text: leave['End Date']);
                           String newToDate = await showDialog<String>(
@@ -230,38 +230,38 @@ class _LeaveState extends State<Leave> {
                           TextEditingController controller =
                           TextEditingController(
                               text: leave['Reason']);
-                              await showDialog<String>(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text('Edit Leave Category'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        DropdownButton<String>(
-                                          value: leave['Reason'] ?? leave_category[0],
-                                          items: leave_category
-                                              .map((String value) {
-                                            return DropdownMenuItem<String>(
-                                              value: value,
-                                              child: Text(value),
-                                            );
-                                          }).toList(),
-                                          onChanged: (String? newValue) {
-                                            setState(() {
-                                              leave['Reason'] = newValue!;
-                                            });
-                                            _updateLeaveData(leave['id'], 'Reason', newValue!);
-                                            Navigator.of(context).pop(
-                                                controller.text);
-                                          },
-                                        ),
-                                      ],
+                          await showDialog<String>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Edit Leave Category'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    DropdownButton<String>(
+                                      value: leave['Reason'] ?? leave_category[0],
+                                      items: leave_category
+                                          .map((String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Text(value),
+                                        );
+                                      }).toList(),
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          leave['Reason'] = newValue!;
+                                        });
+                                        _updateLeaveData(leave['id'], 'Reason', newValue!);
+                                        Navigator.of(context).pop(
+                                            controller.text);
+                                      },
                                     ),
-                                  );
-                                },
-                              ) ??
-                                  '';
+                                  ],
+                                ),
+                              );
+                            },
+                          ) ??
+                              '';
                         }
                             : null, // Only allow editing if status is 'Pending'
                       ),
@@ -305,21 +305,21 @@ class _LeaveState extends State<Leave> {
                     ]);
                   }).toList(),
                 ),),
-                  if(_hasMoreData)
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _currentRowCount += _rowsPerPage; // Increase the number of rows to show
-                  });
-                  _fetchLeaveData(); // Fetch the next set of rows
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.deep_orange,
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  minimumSize: Size(150, 40),
+              if(_hasMoreData)
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _currentRowCount += _rowsPerPage; // Increase the number of rows to show
+                    });
+                    _fetchLeaveData(); // Fetch the next set of rows
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.deep_orange,
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    minimumSize: Size(150, 40),
+                  ),
+                  child: Text('Load More', style: TextStyle(color: Colors.white, fontSize: 10, ),),
                 ),
-                child: Text('Load More', style: TextStyle(color: Colors.white, fontSize: 10, ),),
-              ),
             ],
           ),
         ),
@@ -336,7 +336,7 @@ class _LeaveState extends State<Leave> {
               );
             },
             backgroundColor: AppColors.deep_orange, // Add color to the button
-            child: Icon(Icons.add), // Add a plus icon
+            child: Icon(Icons.add, color: Colors.white), // Add a plus icon
           ),
         ),
       ),
