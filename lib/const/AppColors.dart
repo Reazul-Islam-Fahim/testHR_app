@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
 
 class AppColors{
-  static const deep_orange = Color(0xFFFF6B6B);
+  static const blue = Color(0xFF2196F3);
 }
