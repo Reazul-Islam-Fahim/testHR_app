@@ -19,7 +19,7 @@ class _ExpenseState extends State<Expense> {
             'Expense',
           ),
         ),
-        backgroundColor: AppColors.deep_orange,
+        backgroundColor: AppColors.blue,
         automaticallyImplyLeading: false,
       ),
       body: Text('This is Expense Page'),
