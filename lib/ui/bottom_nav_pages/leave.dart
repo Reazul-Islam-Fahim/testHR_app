@@ -15,6 +15,11 @@ class Leave extends StatefulWidget {
 class _LeaveState extends State<Leave> {
   List<Map<String, dynamic>> leaveData = [];
 
+  int _currentRowCount = 10; // Initial rows to show
+  int _rowsPerPage = 10; // Rows to load on each "Load More" click
+  bool _hasMoreData = true; // Flag to check if there is more data to load
+
+
   Future<void> _fetchLeaveData() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     var currentUser = _auth.currentUser;
@@ -25,7 +30,13 @@ class _LeaveState extends State<Leave> {
           .doc(currentUser!.email)
           .collection("leave-requests");
 
-      QuerySnapshot querySnapshot = await leaveCollection.get();
+      QuerySnapshot querySnapshot = await leaveCollection
+          .orderBy("submittedAt", descending: true)
+          .limit(_currentRowCount)
+          .get();
+
+      _hasMoreData = querySnapshot.docs.length == _currentRowCount;
+
       leaveData.clear();
 
       querySnapshot.docs.forEach((doc) {
@@ -113,192 +124,200 @@ class _LeaveState extends State<Leave> {
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start, // Align content to the top
-          children: [
-            FittedBox(
-              fit: BoxFit.contain,
-              child: leaveData.isEmpty
-                  ? CircularProgressIndicator()
-                  : DataTable(
-                headingRowHeight: 100,
-                columns: const [
-                  DataColumn(label: Text('From Date')),
-                  DataColumn(label: Text('To Date')),
-                  DataColumn(label: Text('Reason')),
-                  DataColumn(label: Text('Status')),
-                  DataColumn(label: Text('Actions')), // Add actions column
-                ],
-                rows: leaveData.map((leave) {
-                  return DataRow(cells: [
-                    DataCell(Text(leave['From date'] ?? ''), onTap: () async {
-                      TextEditingController controller =
-                      TextEditingController(text: leave['From date']);
-                      String newFromDate = await showDialog<String>(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text('Edit From Date'),
-                            content: TextField(
-                              controller: controller,
-                              decoration: InputDecoration(
-                                  hintText: 'Enter new date'),
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text('Cancel'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                              TextButton(
-                                child: Text('Update'),
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pop(controller.text);
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      ) ??
-                          '';
-
-                      if (newFromDate.isNotEmpty) {
-                        setState(() {
-                          leave['From date'] = newFromDate;
-                        });
-                        // Update the Firestore data
-                        await _updateLeaveData(
-                            leave['id'], 'From date', newFromDate);
-                      }
-                    }),
-                    DataCell(Text(leave['To date'] ?? ''), onTap: () async {
-                      TextEditingController controller =
-                      TextEditingController(text: leave['To date']);
-                      String newToDate = await showDialog<String>(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text('Edit To Date'),
-                            content: TextField(
-                              controller: controller,
-                              decoration: InputDecoration(
-                                  hintText: 'Enter new date'),
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text('Cancel'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                              TextButton(
-                                child: Text('Update'),
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pop(controller.text);
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      ) ??
-                          '';
-
-                      if (newToDate.isNotEmpty) {
-                        setState(() {
-                          leave['To date'] = newToDate;
-                        });
-                        // Update the Firestore data
-                        await _updateLeaveData(
-                            leave['id'], 'To date', newToDate);
-                      }
-                    }),
-                    DataCell(Text(leave['Reason'] ?? ''), onTap: () async {
-                      TextEditingController controller =
-                      TextEditingController(text: leave['Reason']);
-                      String newReason = await showDialog<String>(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text('Edit Reason'),
-                            content: TextField(
-                              controller: controller,
-                              decoration: InputDecoration(
-                                  hintText: 'Enter new reason'),
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text('Cancel'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                              TextButton(
-                                child: Text('Update'),
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pop(controller.text);
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      ) ??
-                          '';
-
-                      if (newReason.isNotEmpty) {
-                        setState(() {
-                          leave['Reason'] = newReason;
-                        });
-                        // Update the Firestore data
-                        await _updateLeaveData(
-                            leave['id'], 'Reason', newReason);
-                      }
-                    }),
-                    DataCell(Text('Pending')),
-                    // Add the delete button
-                    DataCell(IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () async {
-                        // Show a confirmation dialog before deleting
-                        bool confirmDelete = await showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text('Delete Leave Request'),
-                              content: Text(
-                                  'Are you sure you want to delete this leave request?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop(true);
-                                  },
-                                  child: Text('Yes'),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start, // Align content to the top
+            children: [
+              FittedBox(
+                fit: BoxFit.cover,
+                child: leaveData.isEmpty
+                    ? CircularProgressIndicator()
+                    : DataTable(
+                  headingRowHeight: 100,
+                  columns: const [
+                    DataColumn(label: Text('From Date')),
+                    DataColumn(label: Text('To Date')),
+                    DataColumn(label: Text('Reason')),
+                    DataColumn(label: Text('Status')),
+                    DataColumn(label: Text('Actions')), // Add actions column
+                  ],
+                  rows: leaveData.map((leave) {
+                    return DataRow(cells: [
+                      DataCell(
+                        Text(leave['From date'] ?? ''),
+                        onTap: leave['status'] == 'Pending' ? () async {
+                          TextEditingController controller = TextEditingController(text: leave['From date']);
+                          String newFromDate = await showDialog<String>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Edit From Date'),
+                                content: TextField(
+                                  controller: controller,
+                                  decoration: InputDecoration(hintText: 'Enter new date'),
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop(false);
-                                  },
-                                  child: Text('No'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: Text('Cancel'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: Text('Update'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop(controller.text);
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          ) ?? '';
 
-                        if (confirmDelete) {
-                          // Delete the record from Firestore
-                          await _deleteLeaveData(leave['id']);
-                        }
-                      },
-                    )),
-                  ]);
-                }).toList(),
+                          if (newFromDate.isNotEmpty) {
+                            setState(() {
+                              leave['From date'] = newFromDate;
+                            });
+                            await _updateLeaveData(leave['id'], 'From date', newFromDate);
+                          }
+                        } : null, // Only allow editing if status is 'Pending'
+                      ),
+                      DataCell(
+                        Text(leave['To date'] ?? ''),
+                        onTap: leave['status'] == 'Pending' ? () async {
+                          TextEditingController controller = TextEditingController(text: leave['To date']);
+                          String newToDate = await showDialog<String>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Edit To Date'),
+                                content: TextField(
+                                  controller: controller,
+                                  decoration: InputDecoration(hintText: 'Enter new date'),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: Text('Cancel'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: Text('Update'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop(controller.text);
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          ) ?? '';
+
+                          if (newToDate.isNotEmpty) {
+                            setState(() {
+                              leave['To date'] = newToDate;
+                            });
+                            await _updateLeaveData(leave['id'], 'To date', newToDate);
+                          }
+                        } : null, // Only allow editing if status is 'Pending'
+                      ),
+                      DataCell(
+                        Text(leave['Reason'] ?? ''),
+                        onTap: leave['status'] == 'Pending' ? () async {
+                          TextEditingController controller = TextEditingController(text: leave['Reason']);
+                          String newReason = await showDialog<String>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Edit Reason'),
+                                content: TextField(
+                                  controller: controller,
+                                  decoration: InputDecoration(hintText: 'Enter new reason'),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: Text('Cancel'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: Text('Update'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop(controller.text);
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          ) ?? '';
+
+                          if (newReason.isNotEmpty) {
+                            setState(() {
+                              leave['Reason'] = newReason;
+                            });
+                            await _updateLeaveData(leave['id'], 'Reason', newReason);
+                          }
+                        } : null, // Only allow editing if status is 'Pending'
+                      ),
+                      DataCell(Text(leave['status'] ?? 'Pending')), // Status should not be editable
+                      DataCell(IconButton(
+                        icon: Icon(
+                          leave['status'] == 'Pending' ?
+                          Icons.delete : Icons.check_circle_outline,
+                          color: leave['status'] == 'Pending' ?
+                          Colors.red : Colors.green,),
+                        onPressed: leave['status'] == 'Pending' ? () async {
+                          bool confirmDelete = await showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Delete Leave Request'),
+                                content: Text('Are you sure you want to delete this leave request?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(true);
+                                    },
+                                    child: Text('Yes'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(false);
+                                    },
+                                    child: Text('No'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+
+                          if (confirmDelete) {
+                            await _deleteLeaveData(leave['id']);
+                          }
+                        } : null, // Only allow delete if status is 'Pending'
+                      )),
+                    ]);
+                  }).toList(),
+                ),),
+                  if(_hasMoreData)
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _currentRowCount += _rowsPerPage; // Increase the number of rows to show
+                  });
+                  _fetchLeaveData(); // Fetch the next set of rows
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.deep_orange,
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  minimumSize: Size(150, 40),
+                ),
+                child: Text('Load More', style: TextStyle(color: Colors.white, fontSize: 10, ),),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       floatingActionButton: Padding(
