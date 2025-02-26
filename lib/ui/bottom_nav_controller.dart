@@ -7,11 +7,19 @@ import 'package:test_app/ui/bottom_nav_pages/profile.dart';
 import 'package:test_app/ui/bottom_nav_pages/notification.dart';
 
 class BottomNavController extends StatefulWidget {
+
+  final int initialIndex; // The initial index for the BottomNavigationBar
+
+  const BottomNavController({Key? key, this.initialIndex = 2}) : super(key: key);
+
   @override
   _BottomNavControllerState createState() => _BottomNavControllerState();
 }
 
 class _BottomNavControllerState extends State<BottomNavController> {
+
+  late int _currentIndex;
+
   final _pages = [
     Leave(),
     Expense(),
@@ -19,7 +27,11 @@ class _BottomNavControllerState extends State<BottomNavController> {
     Notify(),
     Profile(),
   ];
-  var _currentIndex = 2;
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex; // Set the initial index passed from constructor
+  }
 
   @override
   Widget build(BuildContext context) {
