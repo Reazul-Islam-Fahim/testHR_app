@@ -14,6 +14,7 @@ class Leave extends StatefulWidget {
 
 class _LeaveState extends State<Leave> {
   List<Map<String, dynamic>> leaveData = [];
+  List<String> leave_category = ["Medical", "Paid", "Maternity"];
 
   int _currentRowCount = 10; // Initial rows to show
   int _rowsPerPage = 10; // Rows to load on each "Load More" click
@@ -136,8 +137,8 @@ class _LeaveState extends State<Leave> {
                     : DataTable(
                   headingRowHeight: 100,
                   columns: const [
-                    DataColumn(label: Text('From Date')),
-                    DataColumn(label: Text('To Date')),
+                    DataColumn(label: Text('Start Date')),
+                    DataColumn(label: Text('End Date')),
                     DataColumn(label: Text('Reason')),
                     DataColumn(label: Text('Status')),
                     DataColumn(label: Text('Actions')), // Add actions column
@@ -145,14 +146,14 @@ class _LeaveState extends State<Leave> {
                   rows: leaveData.map((leave) {
                     return DataRow(cells: [
                       DataCell(
-                        Text(leave['From date'] ?? ''),
+                        Text(leave['Start date'] ?? ''),
                         onTap: leave['status'] == 'Pending' ? () async {
-                          TextEditingController controller = TextEditingController(text: leave['From date']);
+                          TextEditingController controller = TextEditingController(text: leave['Start Date']);
                           String newFromDate = await showDialog<String>(
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                title: Text('Edit From Date'),
+                                title: Text('Edit Start Date (DD/MM/YYYY)'),
                                 content: TextField(
                                   controller: controller,
                                   decoration: InputDecoration(hintText: 'Enter new date'),
@@ -177,21 +178,21 @@ class _LeaveState extends State<Leave> {
 
                           if (newFromDate.isNotEmpty) {
                             setState(() {
-                              leave['From date'] = newFromDate;
+                              leave['Start Date'] = newFromDate;
                             });
-                            await _updateLeaveData(leave['id'], 'From date', newFromDate);
+                            await _updateLeaveData(leave['id'], 'Start Date', newFromDate);
                           }
                         } : null, // Only allow editing if status is 'Pending'
                       ),
                       DataCell(
-                        Text(leave['To date'] ?? ''),
+                        Text(leave['End date'] ?? ''),
                         onTap: leave['status'] == 'Pending' ? () async {
-                          TextEditingController controller = TextEditingController(text: leave['To date']);
+                          TextEditingController controller = TextEditingController(text: leave['End Date']);
                           String newToDate = await showDialog<String>(
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                title: Text('Edit To Date'),
+                                title: Text('Edit End Date (DD/MM/YYYY)'),
                                 content: TextField(
                                   controller: controller,
                                   decoration: InputDecoration(hintText: 'Enter new date'),
@@ -216,50 +217,54 @@ class _LeaveState extends State<Leave> {
 
                           if (newToDate.isNotEmpty) {
                             setState(() {
-                              leave['To date'] = newToDate;
+                              leave['End Date'] = newToDate;
                             });
-                            await _updateLeaveData(leave['id'], 'To date', newToDate);
+                            await _updateLeaveData(leave['id'], 'End Date', newToDate);
                           }
                         } : null, // Only allow editing if status is 'Pending'
                       ),
                       DataCell(
                         Text(leave['Reason'] ?? ''),
-                        onTap: leave['status'] == 'Pending' ? () async {
-                          TextEditingController controller = TextEditingController(text: leave['Reason']);
-                          String newReason = await showDialog<String>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Edit Reason'),
-                                content: TextField(
-                                  controller: controller,
-                                  decoration: InputDecoration(hintText: 'Enter new reason'),
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text('Cancel'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: Text('Update'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop(controller.text);
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          ) ?? '';
-
-                          if (newReason.isNotEmpty) {
-                            setState(() {
-                              leave['Reason'] = newReason;
-                            });
-                            await _updateLeaveData(leave['id'], 'Reason', newReason);
-                          }
-                        } : null, // Only allow editing if status is 'Pending'
+                        onTap: leave['status'] == 'Pending'
+                            ? () async {
+                          TextEditingController controller =
+                          TextEditingController(
+                              text: leave['Reason']);
+                          String newReason =
+                              await showDialog<String>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text('Edit Leave Category'),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        DropdownButton<String>(
+                                          value: leave['Reason'] ?? leave_category[0],
+                                          items: leave_category
+                                              .map((String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(value),
+                                            );
+                                          }).toList(),
+                                          onChanged: (String? newValue) {
+                                            setState(() {
+                                              leave['Reason'] = newValue!;
+                                            });
+                                            _updateLeaveData(leave['id'], 'Reason', newValue!);
+                                            Navigator.of(context).pop(
+                                                controller.text);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ) ??
+                                  '';
+                        }
+                            : null, // Only allow editing if status is 'Pending'
                       ),
                       DataCell(Text(leave['status'] ?? 'Pending')), // Status should not be editable
                       DataCell(IconButton(
