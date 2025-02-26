@@ -19,7 +19,7 @@ class _NotifyState extends State<Notify> {
             'Notification',
           ),
         ),
-        backgroundColor: AppColors.deep_orange,
+        backgroundColor: AppColors.blue,
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
