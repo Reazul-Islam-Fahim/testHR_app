@@ -14,8 +14,8 @@ class Leave_apply extends StatefulWidget {
 }
 
 class _Leave_applyState extends State<Leave_apply> {
-  final TextEditingController _fromdateController = TextEditingController();
-  final TextEditingController _todateController = TextEditingController();
+  final TextEditingController _startdateController = TextEditingController();
+  final TextEditingController _enddateController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
   List<String> leave_category = ["Medical", "Paid", "Maternity"];
 
@@ -24,9 +24,9 @@ class _Leave_applyState extends State<Leave_apply> {
 
   // Validator for checking if End Date is later than Start Date
   String? _validateDateRange() {
-    if (_fromdateController.text.isNotEmpty && _todateController.text.isNotEmpty) {
-      DateTime fromDate = DateFormat('dd/MM/yyyy').parse(_fromdateController.text);
-      DateTime toDate = DateFormat('dd/MM/yyyy').parse(_todateController.text);
+    if (_startdateController.text.isNotEmpty && _enddateController.text.isNotEmpty) {
+      DateTime fromDate = DateFormat('dd/MM/yyyy').parse(_startdateController.text);
+      DateTime toDate = DateFormat('dd/MM/yyyy').parse(_enddateController.text);
 
       if (toDate.isBefore(fromDate)) {
         return 'End date must be later than Start date';
@@ -48,8 +48,8 @@ class _Leave_applyState extends State<Leave_apply> {
     // Create a new document with the user's email as the ID (don't use auto ID)
     try {
       await userLeaveCollection.doc().set({
-        "Start Date": _fromdateController.text,
-        "End Date": _todateController.text,
+        "Start Date": _startdateController.text,
+        "End Date": _enddateController.text,
         "Reason": _reasonController.text,
         "submittedAt": FieldValue.serverTimestamp(),
         "status": "Pending",
@@ -85,8 +85,8 @@ class _Leave_applyState extends State<Leave_apply> {
       // Validate the form
       if (_formKey.currentState!.validate()) {
         // Form is valid, proceed with submission
-        String fromDate = _fromdateController.text;
-        String toDate = _todateController.text;
+        String fromDate = _startdateController.text;
+        String toDate = _enddateController.text;
         String reason = _reasonController.text;
 
         debugPrint('Date: $fromDate');
@@ -131,8 +131,8 @@ class _Leave_applyState extends State<Leave_apply> {
         // Reset the form fields to refresh the page
         setState(() {
           _formKey.currentState!.reset();
-          _fromdateController.clear();
-          _todateController.clear();
+          _startdateController.clear();
+          _enddateController.clear();
           _reasonController.clear();
         });
       }
@@ -157,7 +157,7 @@ class _Leave_applyState extends State<Leave_apply> {
     );
   }
 
-  Future<void> _selectFromDateFromPicker(BuildContext context) async {
+  Future<void> _selectStartDateFromPicker(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),  // Set initial date to today's date
@@ -168,12 +168,12 @@ class _Leave_applyState extends State<Leave_apply> {
       setState(() {
         // Format the selected date using the intl package
         DateFormat dateFormat = DateFormat('dd/MM/yyyy');
-        _fromdateController.text = dateFormat.format(picked);
+        _startdateController.text = dateFormat.format(picked);
       });
     }
   }
 
-  Future<void> _selectToDateFromPicker(BuildContext context) async {
+  Future<void> _selectEndDateFromPicker(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),  // Set initial date to today's date
@@ -184,7 +184,7 @@ class _Leave_applyState extends State<Leave_apply> {
       setState(() {
         // Format the selected date using the intl package
         DateFormat dateFormat = DateFormat('dd/MM/yyyy');
-        _todateController.text = dateFormat.format(picked);
+        _enddateController.text = dateFormat.format(picked);
       });
     }
   }
@@ -207,12 +207,12 @@ class _Leave_applyState extends State<Leave_apply> {
             child: ListView(
               children: [
                 TextFormField(
-                  controller: _fromdateController,
+                  controller: _startdateController,
                   decoration: InputDecoration(
                     labelText: 'Leave Start Date',
                     border: OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      onPressed: () => _selectFromDateFromPicker(context),
+                      onPressed: () => _selectStartDateFromPicker(context),
                       icon: Icon(Icons.calendar_today_outlined),
                     ),
                   ),
@@ -225,12 +225,12 @@ class _Leave_applyState extends State<Leave_apply> {
                 ),
                 SizedBox(height: 16),
                 TextFormField(
-                  controller: _todateController,
+                  controller: _enddateController,
                   decoration: InputDecoration(
                     labelText: 'Leave End Date',
                     border: OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      onPressed: () => _selectToDateFromPicker(context),
+                      onPressed: () => _selectEndDateFromPicker(context),
                       icon: Icon(Icons.calendar_today_outlined),
                     ),
                   ),
