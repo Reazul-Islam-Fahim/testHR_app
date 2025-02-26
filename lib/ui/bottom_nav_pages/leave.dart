@@ -230,7 +230,6 @@ class _LeaveState extends State<Leave> {
                           TextEditingController controller =
                           TextEditingController(
                               text: leave['Reason']);
-                          String newReason =
                               await showDialog<String>(
                                 context: context,
                                 builder: (context) {
