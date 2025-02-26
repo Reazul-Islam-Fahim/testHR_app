@@ -48,7 +48,7 @@ class _ProfileState extends State<Profile> {
     return Scaffold(
       appBar: AppBar(
         title: Center(child: Text('Profile')),
-        backgroundColor: AppColors.deep_orange,
+        backgroundColor: AppColors.blue,
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(child: Padding(
