@@ -14,7 +14,7 @@ Widget customButton (String buttonText,onPressed){
             color: Colors.white, fontSize: 18.sp),
       ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.deep_orange,
+        backgroundColor: AppColors.blue,
         elevation: 3,
       ),
     ),
