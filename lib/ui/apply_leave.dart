@@ -51,6 +51,7 @@ class _Leave_applyState extends State<Leave_apply> {
         "To date": _todateController.text,
         "Reason": _reasonController.text,
         "submittedAt": FieldValue.serverTimestamp(),
+        "status": "Pending",
       });
 
       // Optionally, show success message or toast
