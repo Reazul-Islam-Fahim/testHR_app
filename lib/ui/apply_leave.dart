@@ -22,7 +22,7 @@ class _Leave_applyState extends State<Leave_apply> {
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
 
-  // Validator for checking if To date is later than From date
+  // Validator for checking if End Date is later than Start Date
   String? _validateDateRange() {
     if (_fromdateController.text.isNotEmpty && _todateController.text.isNotEmpty) {
       DateTime fromDate = DateFormat('dd/MM/yyyy').parse(_fromdateController.text);
@@ -48,8 +48,8 @@ class _Leave_applyState extends State<Leave_apply> {
     // Create a new document with the user's email as the ID (don't use auto ID)
     try {
       await userLeaveCollection.doc().set({
-        "From date": _fromdateController.text,
-        "To date": _todateController.text,
+        "Start Date": _fromdateController.text,
+        "End Date": _todateController.text,
         "Reason": _reasonController.text,
         "submittedAt": FieldValue.serverTimestamp(),
         "status": "Pending",
