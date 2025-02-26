@@ -198,7 +198,7 @@ class _Leave_applyState extends State<Leave_apply> {
           title: Center(
             child: Text('Apply for leave'),
           ),
-          backgroundColor: AppColors.deep_orange,
+          backgroundColor: AppColors.blue,
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -272,7 +272,7 @@ class _Leave_applyState extends State<Leave_apply> {
                 ElevatedButton(
                   onPressed: isLoading ? null : _submitForm, // Disable the button when loading
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.deep_orange,
+                    backgroundColor: AppColors.blue,
                     padding: EdgeInsets.symmetric(vertical: 14.0),
                     textStyle: TextStyle(fontSize: 16),
                   ),
