@@ -6,8 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:test_app/ui/bottom_nav_controller.dart';
 
-import 'bottom_nav_pages/leave.dart';
-
 class Leave_apply extends StatefulWidget {
   const Leave_apply({super.key});
 
@@ -153,7 +151,7 @@ class _Leave_applyState extends State<Leave_apply> {
     }
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => BottomNavController()),
+      MaterialPageRoute(builder: (context) => BottomNavController(initialIndex: 0)),
     );
   }
 
