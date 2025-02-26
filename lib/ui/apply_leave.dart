@@ -1,10 +1,12 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:test_app/const/AppColors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:test_app/ui/bottom_nav_pages/leave.dart';
+import 'package:intl/intl.dart';
+import 'package:test_app/ui/bottom_nav_controller.dart';
+
+import 'bottom_nav_pages/leave.dart';
 
 class Leave_apply extends StatefulWidget {
   const Leave_apply({super.key});
@@ -19,8 +21,65 @@ class _Leave_applyState extends State<Leave_apply> {
   final TextEditingController _reasonController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
+  bool isLoading = false;
 
-  // Submit method to handle form submission
+  // Validator for checking if To date is later than From date
+  String? _validateDateRange() {
+    if (_fromdateController.text.isNotEmpty && _todateController.text.isNotEmpty) {
+      DateTime fromDate = DateFormat('dd/MM/yyyy').parse(_fromdateController.text);
+      DateTime toDate = DateFormat('dd/MM/yyyy').parse(_todateController.text);
+
+      if (toDate.isBefore(fromDate)) {
+        return 'End date must be later than Start date';
+      }
+    }
+    return null;
+  }
+
+  Future<void> sendUserDataToDB() async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    var currentUser = _auth.currentUser;
+
+    // Reference to the user's leave data document in Firestore
+    CollectionReference userLeaveCollection = FirebaseFirestore.instance
+        .collection("users-leave-data")
+        .doc(currentUser!.email)
+        .collection("leave-requests");
+
+    // Create a new document with the user's email as the ID (don't use auto ID)
+    try {
+      await userLeaveCollection.doc().set({
+        "From date": _fromdateController.text,
+        "To date": _todateController.text,
+        "Reason": _reasonController.text,
+        "submittedAt": FieldValue.serverTimestamp(),
+      });
+
+      // Optionally, show success message or toast
+      Fluttertoast.showToast(
+        msg: "Leave request submitted successfully!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+    } catch (e) {
+      // Handle any errors
+      Fluttertoast.showToast(
+        msg: "Submission failed: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+      debugPrint('Error occurred during submission: $e');
+    }
+  }
+
   void _submitForm() async {
     try {
       // Validate the form
@@ -34,12 +93,29 @@ class _Leave_applyState extends State<Leave_apply> {
         debugPrint('Date: $toDate');
         debugPrint('Reason: $reason');
 
+        String? dateError = _validateDateRange();  // Validate date range
+        if (dateError != null) {
+          Fluttertoast.showToast(
+            msg: dateError,  // Show the validation message as toast
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0,
+          );
+          return;  // Exit if there's an error in date range
+        }
+
+        setState(() {
+          isLoading = true; // Set loading state
+        });
+
         // Simulate a form submission with a delay (e.g., API call)
         await Future.delayed(Duration(seconds: 2));
 
         // Send data to DB
         await sendUserDataToDB();
-        Navigator.push(context, CupertinoPageRoute(builder: (context) => Leave()),);
 
         // Show a success toast if submission is successful
         Fluttertoast.showToast(
@@ -75,19 +151,24 @@ class _Leave_applyState extends State<Leave_apply> {
         fontSize: 16.0,
       );
     }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => BottomNavController()),
+    );
   }
 
   Future<void> _selectFromDateFromPicker(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(DateTime.now().year),
-      firstDate: DateTime(DateTime.now().year - 3),
-      lastDate: DateTime(DateTime.now().year + 3),
+      initialDate: DateTime.now(),  // Set initial date to today's date
+      firstDate: DateTime(DateTime.now().year - 3),  // Allow user to pick a date 3 years before
+      lastDate: DateTime(DateTime.now().year + 3),  // Allow user to pick a date 3 years ahead
     );
     if (picked != null) {
       setState(() {
-        _fromdateController.text =
-        "${picked.day}/ ${picked.month}/ ${picked.year}";
+        // Format the selected date using the intl package
+        DateFormat dateFormat = DateFormat('dd/MM/yyyy');
+        _fromdateController.text = dateFormat.format(picked);
       });
     }
   }
@@ -95,61 +176,19 @@ class _Leave_applyState extends State<Leave_apply> {
   Future<void> _selectToDateFromPicker(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(DateTime.now().year),
-      firstDate: DateTime(DateTime.now().year - 30),
-      lastDate: DateTime(DateTime.now().year + 30),
+      initialDate: DateTime.now(),  // Set initial date to today's date
+      firstDate: DateTime(DateTime.now().year - 3),  // Allow user to pick a date 3 years before
+      lastDate: DateTime(DateTime.now().year + 3),  // Allow user to pick a date 3 years ahead
     );
     if (picked != null) {
       setState(() {
-        _todateController.text =
-        "${picked.day}/ ${picked.month}/ ${picked.year}";
+        // Format the selected date using the intl package
+        DateFormat dateFormat = DateFormat('dd/MM/yyyy');
+        _todateController.text = dateFormat.format(picked);
       });
     }
   }
 
-  Future<void> sendUserDataToDB() async {
-    final FirebaseAuth _auth = FirebaseAuth.instance;
-    var currentUser = _auth.currentUser;
-
-    // Reference to the user's leave data document in Firestore
-    CollectionReference userLeaveCollection = FirebaseFirestore.instance
-        .collection("users-leave-data")
-        .doc(currentUser!.email)
-        .collection("leave-requests"); // Subcollection for leave requests
-
-    // Create a new document with the user's email as the ID (don't use auto ID)
-    try {
-      await userLeaveCollection.doc().set({
-        "From date": _fromdateController.text,
-        "To date": _todateController.text,
-        "Reason": _reasonController.text,
-        "submittedAt": FieldValue.serverTimestamp(), // Add timestamp for submission
-      });
-
-      // Optionally, show success message or toast
-      Fluttertoast.showToast(
-        msg: "Leave request submitted successfully!",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-    } catch (e) {
-      // Handle any errors
-      Fluttertoast.showToast(
-        msg: "Submission failed: $e",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-      debugPrint('Error occurred during submission: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,14 +196,9 @@ class _Leave_applyState extends State<Leave_apply> {
       child: Scaffold(
         appBar: AppBar(
           title: Center(
-            child: Center(
-              child: Text(
-                'Apply for leave',
-              ),
-            ),
+            child: Text('Apply for leave'),
           ),
           backgroundColor: AppColors.deep_orange,
-          automaticallyImplyLeading: false,
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -222,15 +256,18 @@ class _Leave_applyState extends State<Leave_apply> {
                   },
                 ),
                 SizedBox(height: 20),
-                // Submit button
                 ElevatedButton(
-                  onPressed: _submitForm, // Call the submit method
+                  onPressed: isLoading ? null : _submitForm, // Disable the button when loading
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.deep_orange,
                     padding: EdgeInsets.symmetric(vertical: 14.0),
                     textStyle: TextStyle(fontSize: 16),
                   ),
-                  child: Text(
+                  child: isLoading
+                      ? CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Color for the indicator
+                  )
+                      : Text(
                     'Submit',
                     style: TextStyle(
                       color: Colors.white,
