@@ -17,6 +17,7 @@ class _Leave_applyState extends State<Leave_apply> {
   final TextEditingController _fromdateController = TextEditingController();
   final TextEditingController _todateController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
+  List<String> leave_category = ["Medical", "Paid", "Maternity"];
 
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
@@ -244,8 +245,21 @@ class _Leave_applyState extends State<Leave_apply> {
                 TextFormField(
                   controller: _reasonController,
                   decoration: InputDecoration(
-                    labelText: 'Reason for Leave',
-                    border: OutlineInputBorder(),
+                    labelText: 'Leave Category',
+                    suffixIcon: DropdownButton<String>(
+                      items: leave_category.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                          onTap: () {
+                            setState(() {
+                              _reasonController.text = value;
+                            });
+                          },
+                        );
+                      }).toList(),
+                      onChanged: (_) {},
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
