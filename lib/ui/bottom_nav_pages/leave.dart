@@ -121,7 +121,7 @@ class _LeaveState extends State<Leave> {
             'Leave Report',
           ),
         ),
-        backgroundColor: AppColors.deep_orange,
+        backgroundColor: AppColors.blue,
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
@@ -314,7 +314,7 @@ class _LeaveState extends State<Leave> {
                     _fetchLeaveData(); // Fetch the next set of rows
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.deep_orange,
+                    backgroundColor: AppColors.blue,
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     minimumSize: Size(150, 40),
                   ),
@@ -335,7 +335,7 @@ class _LeaveState extends State<Leave> {
                 CupertinoPageRoute(builder: (context) => Leave_apply()),
               );
             },
-            backgroundColor: AppColors.deep_orange, // Add color to the button
+            backgroundColor: AppColors.blue, // Add color to the button
             child: Icon(Icons.add, color: Colors.white), // Add a plus icon
           ),
         ),
