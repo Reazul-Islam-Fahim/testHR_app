@@ -45,7 +45,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.deep_orange,
+      backgroundColor: AppColors.blue,
       body: SafeArea(
         child: Column(
           children: [
@@ -96,7 +96,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         Text(
                           "Welcome Buddy!",
                           style: TextStyle(
-                              fontSize: 22.sp, color: AppColors.deep_orange),
+                              fontSize: 22.sp, color: AppColors.blue),
                         ),
                         Text(
                           "Wishing you a wonderful time",
@@ -114,7 +114,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               height: 48.h,
                               width: 41.w,
                               decoration: BoxDecoration(
-                                  color: AppColors.deep_orange,
+                                  color: AppColors.blue,
                                   borderRadius: BorderRadius.circular(12.r)),
                               child: Center(
                                 child: Icon(
@@ -139,7 +139,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   labelText: 'EMAIL',
                                   labelStyle: TextStyle(
                                     fontSize: 15.sp,
-                                    color: AppColors.deep_orange,
+                                    color: AppColors.blue,
                                   ),
                                 ),
                               ),
@@ -155,7 +155,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               height: 48.h,
                               width: 41.w,
                               decoration: BoxDecoration(
-                                  color: AppColors.deep_orange,
+                                  color: AppColors.blue,
                                   borderRadius: BorderRadius.circular(12.r)),
                               child: Center(
                                 child: Icon(
@@ -181,7 +181,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   labelText: 'PASSWORD',
                                   labelStyle: TextStyle(
                                     fontSize: 15.sp,
-                                    color: AppColors.deep_orange,
+                                    color: AppColors.blue,
                                   ),
                                   suffixIcon: _obscureText == true
                                       ? IconButton(
@@ -227,7 +227,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   color: Colors.white, fontSize: 18.sp),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.deep_orange,
+                              backgroundColor: AppColors.blue,
                               elevation: 3,
                             ),
                           ),
@@ -251,7 +251,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                 style: TextStyle(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.deep_orange,
+                                  color: AppColors.blue,
                                 ),
                               ),
                               onTap: () {
