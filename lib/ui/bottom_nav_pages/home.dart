@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../const/AppColors.dart';
 import 'package:intl/intl.dart';
-import 'dart:async'; // <-- Add this import to use Timer
+import 'dart:async';
+import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -15,6 +15,8 @@ class _HomeState extends State<Home> {
   String currentHour = DateFormat('HH').format(DateTime.now());
   String currentMinute = DateFormat('mm').format(DateTime.now());
   String currentSecond = DateFormat('ss').format(DateTime.now());
+
+  bool isSwitched = false;
 
   late Timer _timer;
 
@@ -96,6 +98,7 @@ class _HomeState extends State<Home> {
                     top: 20,
                     child: Column(children: [
                       GestureDetector(
+                        behavior: HitTestBehavior.opaque,
                         onTap:
                             _pickImage, // When the user taps the CircleAvatar, they can pick a new image
                         child: CircleAvatar(
@@ -129,7 +132,8 @@ class _HomeState extends State<Home> {
                             color: Colors.white,
                           ),
                           softWrap: true, // Automatically wraps the text
-                          overflow: TextOverflow.ellipsis, // Adds ellipsis if text overflows
+                          overflow: TextOverflow
+                              .ellipsis, // Adds ellipsis if text overflows
                           maxLines: 2,
                         ),
                       ),
@@ -220,7 +224,7 @@ class _HomeState extends State<Home> {
                                 flex: 2, // 2 parts of the total 3
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.green,
+                                    color: Colors.transparent,
                                     borderRadius:
                                         BorderRadius.all(Radius.circular(20)),
                                   ),
@@ -231,7 +235,7 @@ class _HomeState extends State<Home> {
                                     children: [
                                       Expanded(
                                         flex: 1,
-                                        child: Text('hi'),
+                                        child: Center(child: Text(' ')),
                                       ),
                                       Expanded(
                                           flex: 1,
@@ -380,6 +384,43 @@ class _HomeState extends State<Home> {
                     ]),
                   )
                 ],
+              ),
+              Container(
+                alignment: Alignment.centerRight,
+                padding: EdgeInsets.only(right: 30),
+                child: AnimatedToggleSwitch<bool>.size(
+                  current: isSwitched,
+                  values: [false, true],
+                  iconOpacity: 0.2,
+                  indicatorSize: const Size.fromWidth(80),
+                  customIconBuilder: (context, local, global) => Text(
+                    local.value ? 'OUT' : 'IN',
+                    style: TextStyle(
+                        color: Color.lerp(
+                            Colors.black, Colors.white, local.animationValue)),
+                  ),
+                  borderWidth: 1.0,
+                  iconAnimationType: AnimationType.onHover,
+                  style: ToggleStyle(
+                      indicatorColor: isSwitched ? Colors.red : Colors.green,
+                      borderColor: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 3,
+                          blurRadius: 5,
+                          offset: Offset(0, 4),
+                        )
+                      ]),
+                  selectedIconScale: 1.0,
+                  onChanged: (val) {
+                    setState(() {
+                      isSwitched = val;
+                      print(isSwitched);
+                    });
+                  },
+                ),
               )
             ],
           ),
