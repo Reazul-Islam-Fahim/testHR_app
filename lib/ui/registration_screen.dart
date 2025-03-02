@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:test_app/const/AppColors.dart';
 import 'package:test_app/ui/login_screen.dart';
 import 'package:test_app/ui/user_form.dart';
-
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -17,14 +16,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
+  bool _isLoading = false;
 
   signUp() async {
+    setState(() {
+      _isLoading = true;  // Set loading to true when button is pressed
+    });
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
               email: _emailController.text, password: _passwordController.text);
       var authCredential = userCredential.user;
       print(authCredential!.uid);
+
+      setState(() {
+        _isLoading = false;  // Set loading to false after task completes
+      });
+
       if (authCredential.uid.isNotEmpty) {
         Navigator.push(context, CupertinoPageRoute(builder: (_) => UserForm()));
       } else {
@@ -39,15 +47,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       }
     } catch (e) {
       print(e);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.blue,
-      body: SafeArea(
-        child: Column(
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: AppColors.blue,
+        body: Column(
           children: [
             SizedBox(
               height: 150.h,
@@ -99,7 +110,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               fontSize: 22.sp, color: AppColors.blue),
                         ),
                         Text(
-                          "Wishing you a wonderful time",
+                          "Wishing you a wonderful experience",
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: Color(0xFFBBBBBB),
@@ -210,18 +221,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           ],
                         ),
 
-                        SizedBox(
-                          height: 50.h,
-                        ),
-                        // elevated button
+                        SizedBox(height: 50.h,),
                         SizedBox(
                           width: 1.sw,
                           height: 56.h,
                           child: ElevatedButton(
-                            onPressed: () {
-                              signUp();
-                            },
-                            child: Text(
+                            onPressed: _isLoading ? null : signUp,
+                            child: _isLoading
+                                ? CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                                : Text(
                               "Continue",
                               style: TextStyle(
                                   color: Colors.white, fontSize: 18.sp),
