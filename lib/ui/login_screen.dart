@@ -19,14 +19,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
+  bool _isLoading = false;
 
   logIn() async {
     try {
+      setState(() {
+        _isLoading = true;  // Set loading to true when button is pressed
+      });
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(
               email: _emailController.text, password: _passwordController.text);
       var authCredential = userCredential.user;
       debugPrint(authCredential!.uid);
+      setState(() {
+        _isLoading = false;  // Set loading to false after task completes
+      });
       if (authCredential.uid.isNotEmpty) {
         if (mounted) {
           Fluttertoast.showToast(
@@ -66,10 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.blue,
-      body: SafeArea(
-        child: Column(
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: AppColors.blue,
+        body: Column(
           children: [
             SizedBox(
               height: 150.h,
@@ -231,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-
+        
                         SizedBox(
                           height: 50.h,
                         ),
@@ -241,6 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           () {
                             logIn();
                           },
+                          isLoading: _isLoading,
                         ),
                         SizedBox(
                           height: 20.h,
