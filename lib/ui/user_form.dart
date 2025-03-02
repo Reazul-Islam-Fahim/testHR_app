@@ -51,9 +51,9 @@ class _UserFormState extends State<UserForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
+    return SafeArea(
+      child: Scaffold(
+        body: Padding(
           padding: EdgeInsets.all(20.w),
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical,
@@ -112,14 +112,14 @@ class _UserFormState extends State<UserForm> {
                     ),
                   ),
                 ),
-
-
+        
+        
                 myTextField("enter your employee id",TextInputType.number,_idController),
-
+        
                 SizedBox(
                   height: 50.h,
                 ),
-
+        
                 // elevated button
                 customButton("Continue",()=>sendUserDataToDB()),
               ],
