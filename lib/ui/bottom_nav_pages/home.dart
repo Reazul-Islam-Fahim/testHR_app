@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../../const/AppColors.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
-import 'package:animated_toggle_switch/animated_toggle_switch.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../../const/AppColors.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -12,20 +16,40 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  // State variables
+  List<Map<String, dynamic>> leaveData = [];
+  bool isLoading = false;
   String currentHour = DateFormat('HH').format(DateTime.now());
   String currentMinute = DateFormat('mm').format(DateTime.now());
   String currentSecond = DateFormat('ss').format(DateTime.now());
-
   bool isSwitched = false;
-
+  String inTime = '';
+  String outTime = '';
+  bool inTimeCaptured = false;
+  bool outTimeCaptured = false;
+  String employeeId = '';
+  late FirebaseFirestore firestore;
   late Timer _timer;
+  File? _image;
 
   @override
   void initState() {
     super.initState();
+    firestore = FirebaseFirestore.instance;
+    _startTimer();
+    _loadState();
+    fetchLeaveData();
+  }
 
-    // Update the time every second
-    _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  // Start a timer to update time every second
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         currentHour = DateFormat('HH').format(DateTime.now());
         currentMinute = DateFormat('mm').format(DateTime.now());
@@ -34,46 +58,116 @@ class _HomeState extends State<Home> {
     });
   }
 
-  @override
-  void dispose() {
-    // Cancel the timer when the widget is disposed
-    _timer.cancel();
-    super.dispose();
-  }
-
-  File? _image;
-
-  // Function to pick image from gallery
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    // Pick an image from the gallery
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        // Store the image as a File object
-        _image = File(image.path);
-      });
+  // Fetch leave data from API
+  Future<void> fetchLeaveData() async {
+    try {
+      final response =
+          await http.get(Uri.parse('https://example.com/api/leave-data'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          leaveData = data
+              .map((item) => {
+                    'Leave Type': item['leaveType'],
+                    'Total Leave': item['totalLeave'],
+                    'Availed': item['availed'],
+                    'Balance': item['balance'],
+                  })
+              .toList();
+        });
+      } else {
+        throw Exception('Failed to load leave data');
+      }
+    } catch (e) {
+      print("Error fetching leave data: $e");
     }
   }
 
-  String _getCurrentDayOfWeek() {
-    DateTime now = DateTime.now();
-    return DateFormat('EEEE')
-        .format(now); // Formats the current date as the full day name
+  // Load attendance state from Firestore
+  Future<void> _loadState() async {
+    try {
+      setState(() => isLoading = true);
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc =
+            await firestore.collection('users-form-data').doc(user.email).get();
+        if (userDoc.exists) {
+          employeeId = userDoc['employee_id'];
+          String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+          DocumentSnapshot doc = await firestore
+              .collection('attendance')
+              .doc(employeeId)
+              .collection('days')
+              .doc(currentDate)
+              .get();
+
+          if (doc.exists) {
+            setState(() {
+              isSwitched = doc['isSwitched'] ?? false;
+              inTimeCaptured = doc['inTimeCaptured'] ?? false;
+              outTimeCaptured = doc['outTimeCaptured'] ?? false;
+              inTime = doc['inTime'] ?? '';
+              outTime = doc['outTime'] ?? '';
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print("Error loading state: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
-  String _getCurrentDayOfMonth() {
-    DateTime now = DateTime.now();
-    return DateFormat('dd')
-        .format(now); // Formats the current date as the day of the month (DD)
+  // Save attendance state to Firestore
+  Future<void> _saveState() async {
+    try {
+      setState(() => isLoading = true);
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc =
+            await firestore.collection('users-form-data').doc(user.email).get();
+        if (userDoc.exists) {
+          employeeId = userDoc['employee_id'];
+          String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+          await firestore
+              .collection('attendance')
+              .doc(employeeId)
+              .collection('days')
+              .doc(currentDate)
+              .set({
+            'isSwitched': isSwitched,
+            'inTimeCaptured': inTimeCaptured,
+            'outTimeCaptured': outTimeCaptured,
+            'inTime': inTime,
+            'outTime': outTime,
+            'timestamp': getCurrentDateTime(),
+          });
+        }
+      }
+    } catch (e) {
+      print("Error saving state: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
-  String _getCurrentMonthName() {
-    DateTime now = DateTime.now();
-    return DateFormat('MMMM').format(
-        now); // Formats the current date as the full month name (e.g., "January")
+  // Pick image from gallery
+  Future<void> _pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _image = File(image.path));
+    }
   }
+
+  // Helper methods
+  String getCurrentTime() => DateFormat('HH:mm:ss').format(DateTime.now());
+  String getCurrentDateTime() =>
+      DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+  String _getCurrentDayOfWeek() => DateFormat('EEEE').format(DateTime.now());
+  String _getCurrentDayOfMonth() => DateFormat('dd').format(DateTime.now());
+  String _getCurrentMonthName() => DateFormat('MMMM').format(DateTime.now());
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +238,7 @@ class _HomeState extends State<Home> {
                         padding: EdgeInsets.symmetric(horizontal: 20),
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height /
-                            4, // Adds space from left and right
+                            5, // Adds space from left and right
                         color: Colors.transparent,
                         child: Container(
                           width: double.infinity,
@@ -233,10 +327,6 @@ class _HomeState extends State<Home> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
-                                      Expanded(
-                                        flex: 1,
-                                        child: Center(child: Text(' ')),
-                                      ),
                                       Expanded(
                                           flex: 1,
                                           child: Row(
@@ -373,6 +463,10 @@ class _HomeState extends State<Home> {
                                               )
                                             ],
                                           )),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Center(child: Text(' ')),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -385,43 +479,194 @@ class _HomeState extends State<Home> {
                   )
                 ],
               ),
-              Container(
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.only(right: 30),
-                child: AnimatedToggleSwitch<bool>.size(
-                  current: isSwitched,
-                  values: [false, true],
-                  iconOpacity: 0.2,
-                  indicatorSize: const Size.fromWidth(80),
-                  customIconBuilder: (context, local, global) => Text(
-                    local.value ? 'OUT' : 'IN',
-                    style: TextStyle(
-                        color: Color.lerp(
-                            Colors.black, Colors.white, local.animationValue)),
+              Column(
+                children: [
+                  // Conditionally render the switch or the text
+                  if (!(inTimeCaptured &&
+                      outTimeCaptured)) // Show the switch only if both times are not captured
+                    isLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.blue)))
+                        : Container(
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.only(
+                              right: 60,
+                              top: 30,
+                            ),
+                            child: Transform.scale(
+                              scale: 2,
+                              child: Switch(
+                                value: isSwitched,
+                                onChanged: (val) {
+                                  setState(() {
+                                    if (inTimeCaptured && outTimeCaptured) {
+                                      return; // Do nothing if both inTime and outTime are captured
+                                    }
+
+                                    isSwitched = val;
+                                    print(isSwitched);
+
+                                    // Capture the current time based on the toggle state
+                                    if (isSwitched && !inTimeCaptured) {
+                                      inTime = getCurrentTime();
+                                      inTimeCaptured =
+                                          true; // Mark IN time as captured
+                                    }
+
+                                    // Capture time only once for OUT state
+                                    if (!isSwitched && !outTimeCaptured) {
+                                      outTime = getCurrentTime();
+                                      outTimeCaptured =
+                                          true; // Mark OUT time as captured
+                                    }
+
+                                    _saveState();
+                                  });
+                                },
+                                activeTrackColor: Colors.red,
+                                activeColor: Colors.white,
+                                inactiveTrackColor: Colors.green,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                splashRadius: 0,
+                                inactiveThumbImage:
+                                    AssetImage('assets/images/in.png'),
+                                activeThumbImage:
+                                    AssetImage('assets/images/out.png'),
+                              ),
+                            ),
+                          ),
+                  // Show text if both IN and OUT times are captured
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.all(20),
+                    margin: !(inTimeCaptured && outTimeCaptured)
+                        ? EdgeInsets.only(left: 20, right: 20, top: 60)
+                        : EdgeInsets.only(left: 20, right: 20, top: 130),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              // Show "IN TIME"
+                              Text('IN TIME: ',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              SizedBox(height: 10),
+                              Text(inTime.isEmpty
+                                  ? 'Not set'
+                                  : inTime), // Show stored IN time
+                              SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              // Show "OUT TIME"
+                              Text('OUT TIME: ',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              SizedBox(height: 10),
+                              Text(outTime.isEmpty
+                                  ? 'Not set'
+                                  : outTime), // Show stored OUT time
+                              SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  borderWidth: 1.0,
-                  iconAnimationType: AnimationType.onHover,
-                  style: ToggleStyle(
-                      indicatorColor: isSwitched ? Colors.red : Colors.green,
-                      borderColor: Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          spreadRadius: 3,
-                          blurRadius: 5,
-                          offset: Offset(0, 4),
-                        )
-                      ]),
-                  selectedIconScale: 1.0,
-                  onChanged: (val) {
-                    setState(() {
-                      isSwitched = val;
-                      print(isSwitched);
-                    });
-                  },
-                ),
-              )
+                  SizedBox(height: 20),
+
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.all(20),
+                    margin: EdgeInsets.only(left: 20, right: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Monthly Attendance Summary',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 20),
+
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.all(20),
+                    margin: EdgeInsets.only(left: 20, right: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                    ),
+                    child: Center(
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Leave Balance',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(
+                              height: 20,
+                            ),
+                            FittedBox(
+                              fit: BoxFit.contain,
+                              child: DataTable(
+                                columns: const [
+                                  DataColumn(label: Text('Leave Type')),
+                                  DataColumn(label: Text('Total Leave')),
+                                  DataColumn(label: Text('Availed')),
+                                  DataColumn(label: Text('Balance')),
+                                ],
+                                rows: leaveData.map((data) {
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(data['Leave Type'])),
+                                      DataCell(
+                                          Text(data['Total Leave'].toString())),
+                                      DataCell(
+                                          Text(data['Availed'].toString())),
+                                      DataCell(
+                                          Text(data['Balance'].toString())),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ]),
+                    ),
+                  )
+                ],
+              ),
             ],
           ),
         ),
