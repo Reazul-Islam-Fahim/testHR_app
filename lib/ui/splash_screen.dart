@@ -26,10 +26,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.blue,
-      body: SafeArea(
-        child: Center(
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: AppColors.blue,
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -38,13 +38,13 @@ class _SplashScreenState extends State<SplashScreen> {
                 'assets/images/radiant.png',
                 fit: BoxFit.contain,
               ),
-              Text(
-                'Radiant HR',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 44.sp,
-                    fontWeight: FontWeight.bold),
-              ),
+              // Text(
+              //   'Radiant HR',
+              //   style: TextStyle(
+              //       color: Colors.white,
+              //       fontSize: 44.sp,
+              //       fontWeight: FontWeight.bold),
+              // ),
               SizedBox(
                 height: 10.h,
               ),
