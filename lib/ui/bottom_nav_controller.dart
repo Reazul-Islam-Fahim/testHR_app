@@ -35,45 +35,47 @@ class _BottomNavControllerState extends State<BottomNavController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      bottomNavigationBar: BottomNavigationBar(
-        elevation: 5,
-        selectedItemColor: AppColors.blue,
-        backgroundColor: Colors.white,
-        unselectedItemColor: Colors.grey,
-        currentIndex: _currentIndex,
-        selectedLabelStyle:
-            TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.time_to_leave),
-            label: "Leave",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.money),
-            label: "Expense",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notification",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Person",
-          ),
-        ],
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-            print(_currentIndex);
-          });
-        },
+    return SafeArea(
+      child: Scaffold(
+        bottomNavigationBar: BottomNavigationBar(
+          elevation: 5,
+          selectedItemColor: AppColors.blue,
+          backgroundColor: Colors.white,
+          unselectedItemColor: Colors.grey,
+          currentIndex: _currentIndex,
+          selectedLabelStyle:
+              TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.time_to_leave),
+              label: "Leave",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.money),
+              label: "Expense",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: "Home",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.notifications),
+              label: "Notification",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: "Person",
+            ),
+          ],
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+              print(_currentIndex);
+            });
+          },
+        ),
+        body: _pages[_currentIndex],
       ),
-      body: _pages[_currentIndex],
     );
   }
 }
