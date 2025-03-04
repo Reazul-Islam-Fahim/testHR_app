@@ -7,8 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import '../../const/AppColors.dart';
+import 'package:geolocator/geolocator.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -31,6 +31,9 @@ class _HomeState extends State<Home> {
   late FirebaseFirestore firestore;
   late Timer _timer;
   File? _image;
+  String location = 'Fetching location...';
+  String inLatitude = 'N/A';
+  String inLongitude = 'N/A';
 
   @override
   void initState() {
@@ -62,7 +65,7 @@ class _HomeState extends State<Home> {
   Future<void> fetchLeaveData() async {
     try {
       final response =
-          await http.get(Uri.parse('https://example.com/api/leave-data'));
+          await http.get(Uri.parse('http://192.168.3.228:8000/api/leave-data'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
@@ -74,6 +77,7 @@ class _HomeState extends State<Home> {
                     'Balance': item['balance'],
                   })
               .toList();
+          print("Data load successful");
         });
       } else {
         throw Exception('Failed to load leave data');
@@ -141,6 +145,9 @@ class _HomeState extends State<Home> {
             'outTimeCaptured': outTimeCaptured,
             'inTime': inTime,
             'outTime': outTime,
+            'location': location,
+            'latitude': inLatitude,
+            'longitude': inLongitude,
             'timestamp': getCurrentDateTime(),
           });
         }
@@ -152,6 +159,58 @@ class _HomeState extends State<Home> {
     }
   }
 
+
+  // Function to get the current location and reverse geocode it to an address
+  Future<void> _getLocation() async {
+    // First, check and request permissions
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Handle case where permission is denied permanently
+      print('Location permission denied forever');
+      setState(() {
+        location = 'Location permission denied forever.';
+      });
+      return;
+    }
+
+    try {
+      // Fetch the current position (latitude and longitude)
+      final geoPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        location = 'Latitude: ${geoPosition.latitude}, Longitude: ${geoPosition.longitude}';
+        inLatitude = '${geoPosition.latitude}';
+        inLongitude = '${geoPosition.longitude}';
+      });
+
+      print('Location fetched: Latitude: ${geoPosition.latitude}, Longitude: ${geoPosition.longitude}');
+    } catch (e) {
+      print('Failed to get location: $e');
+      setState(() {
+        location = 'Failed to get location: $e';
+      });
+    }
+  }
+
+
+  Future<void> checkPermissions() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.deniedForever) {
+      print('Location permission denied forever');
+      return;
+    }
+  }
+
+
   // Pick image from gallery
   Future<void> _pickImage() async {
     final ImagePicker _picker = ImagePicker();
@@ -161,6 +220,7 @@ class _HomeState extends State<Home> {
     }
   }
 
+
   // Helper methods
   String getCurrentTime() => DateFormat('HH:mm:ss').format(DateTime.now());
   String getCurrentDateTime() =>
@@ -168,6 +228,44 @@ class _HomeState extends State<Home> {
   String _getCurrentDayOfWeek() => DateFormat('EEEE').format(DateTime.now());
   String _getCurrentDayOfMonth() => DateFormat('dd').format(DateTime.now());
   String _getCurrentMonthName() => DateFormat('MMMM').format(DateTime.now());
+
+
+
+  // New async function to handle the switch change
+  Future<void> _handleSwitchChange(bool val) async {
+    // First update the UI state inside setState without async operations
+    setState(() {
+      if (inTimeCaptured && outTimeCaptured) {
+        return; // Do nothing if both inTime and outTime are captured
+      }
+
+      isSwitched = val;
+      print(isSwitched);
+
+      // Capture the current time based on the toggle state
+      if (isSwitched && !inTimeCaptured) {
+        inTime = getCurrentTime();
+        inTimeCaptured = true; // Mark IN time as captured
+      }
+
+      // Capture time only once for OUT state
+      if (!isSwitched && !outTimeCaptured) {
+        outTime = getCurrentTime();
+        outTimeCaptured = true; // Mark OUT time as captured
+      }
+    });
+
+    // Now perform the async operations outside of setState
+    if (isSwitched) {
+      await checkPermissions();
+      await _getLocation();
+    }
+
+    // After fetching location, save the state
+    await _saveState();
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -499,31 +597,8 @@ class _HomeState extends State<Home> {
                               scale: 2,
                               child: Switch(
                                 value: isSwitched,
-                                onChanged: (val) {
-                                  setState(() {
-                                    if (inTimeCaptured && outTimeCaptured) {
-                                      return; // Do nothing if both inTime and outTime are captured
-                                    }
-
-                                    isSwitched = val;
-                                    print(isSwitched);
-
-                                    // Capture the current time based on the toggle state
-                                    if (isSwitched && !inTimeCaptured) {
-                                      inTime = getCurrentTime();
-                                      inTimeCaptured =
-                                          true; // Mark IN time as captured
-                                    }
-
-                                    // Capture time only once for OUT state
-                                    if (!isSwitched && !outTimeCaptured) {
-                                      outTime = getCurrentTime();
-                                      outTimeCaptured =
-                                          true; // Mark OUT time as captured
-                                    }
-
-                                    _saveState();
-                                  });
+                                onChanged: (val) async{
+                                  await _handleSwitchChange(val);
                                 },
                                 activeTrackColor: Colors.red,
                                 activeColor: Colors.white,
