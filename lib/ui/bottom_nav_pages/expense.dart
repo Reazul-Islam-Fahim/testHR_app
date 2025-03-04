@@ -148,218 +148,61 @@ class _ExpenseState extends State<Expense> {
         body: SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start, // Align content to the top
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              FittedBox(
-                fit: BoxFit.cover,
-                child: ExpenseData.isEmpty
-                    ? isLoading
-                    ? CircularProgressIndicator()
-                    : Center(child: Text('No data'))
-                    : DataTable(
-                  headingRowHeight: 100,
-                  columns: const [
-                    DataColumn(label: Text('Start Date')),
-                    DataColumn(label: Text('End Date')),
-                    DataColumn(label: Text('Category')),
-                    DataColumn(label: Text('Amount')),
-                    DataColumn(label: Text('Status')),
-                    DataColumn(label: Text('Actions')), // Add actions column
-                  ],
-                  rows: ExpenseData.map((Expense) {
-                    return DataRow(cells: [
-                      DataCell(
-                        Text(Expense['Start Date'] ?? ''),
-                        onTap: Expense['status'] == 'Pending' ? () async {
-                          TextEditingController controller = TextEditingController(text: Expense['Start Date']);
-                          String newFromDate = await showDialog<String>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Edit Start Date (DD/MM/YYYY)'),
-                                content: TextField(
-                                  controller: controller,
-                                  decoration: InputDecoration(hintText: 'Enter new date'),
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text('Cancel'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: Text('Update'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop(controller.text);
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          ) ?? '';
-
-                          if (newFromDate.isNotEmpty) {
-                            setState(() {
-                              Expense['Start Date'] = newFromDate;
-                            });
-                            await _updateExpenseData(Expense['id'], 'Start Date', newFromDate);
-                          }
-                        } : null, // Only allow editing if status is 'Pending'
+              ExpenseData.isEmpty
+                  ? isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : Center(child: Text('No data'))
+                  : ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(), // Disable ListView's scrolling
+                itemCount: ExpenseData.length,
+                itemBuilder: (context, index) {
+                  final expense = ExpenseData[index];
+                  return Container(
+                    margin: EdgeInsets.symmetric(horizontal: 20, vertical: 5), // Add horizontal margin
+                    decoration: BoxDecoration(
+                      color: Colors.white, // White background
+                      borderRadius: BorderRadius.circular(10), // Radial border
+                      boxShadow: [ // Add a subtle shadow for elevation
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: ListTile(
+                      title: Text('Category: ${expense['Category'] ?? ''}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Start Date: ${expense['Start Date'] ?? ''}'),
+                          Text('End Date: ${expense['End Date'] ?? ''}'),
+                          Text('Amount: ${expense['Amount'] ?? ''}'),
+                          Text('Status: ${expense['status'] ?? 'Pending'}'),
+                        ],
                       ),
-                      DataCell(
-                        Text(Expense['End Date'] ?? ''),
-                        onTap: Expense['status'] == 'Pending' ? () async {
-                          TextEditingController controller = TextEditingController(text: Expense['End Date']);
-                          String newToDate = await showDialog<String>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Edit End Date (DD/MM/YYYY)'),
-                                content: TextField(
-                                  controller: controller,
-                                  decoration: InputDecoration(hintText: 'Enter new date'),
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text('Cancel'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: Text('Update'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop(controller.text);
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          ) ?? '';
-
-                          if (newToDate.isNotEmpty) {
-                            setState(() {
-                              Expense['End Date'] = newToDate;
-                            });
-                            await _updateExpenseData(Expense['id'], 'End Date', newToDate);
-                          }
-                        } : null, // Only allow editing if status is 'Pending'
-                      ),
-                      DataCell(
-                        Text(Expense['Category'] ?? ''),
-                        onTap: Expense['status'] == 'Pending'
-                            ? () async {
-                          TextEditingController controller =
-                          TextEditingController(
-                              text: Expense['Category']);
-                          await showDialog<String>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Edit Expense Category'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    DropdownButton<String>(
-                                      value: Expense['Category'] != null && Expense_category.contains(Expense['Category'])
-                                          ? Expense['Category']
-                                          : Expense_category[0], // Fallback to the first category if invalid
-                                      items: Expense_category
-                                          .map((String value) {
-                                        return DropdownMenuItem<String>(
-                                          value: value,
-                                          child: Text(value),
-                                        );
-                                      }).toList(),
-                                      onChanged: (String? newValue) {
-                                        setState(() {
-                                          Expense['Category'] = newValue!;
-                                        });
-                                        _updateExpenseData(Expense['id'], 'Category', newValue!);
-                                        Navigator.of(context).pop();  // Removed 'controller.text' which was incorrect
-                                      },
-                                    ),
-
-                                  ],
-                                ),
-                              );
-                            },
-                          ) ??
-                              '';
-                        }
-                            : null, // Only allow editing if status is 'Pending'
-                      ),
-                      DataCell(
-                        Text(Expense['Amount'] ?? ''), // Display the current Amount instead of Category
-                        onTap: Expense['status'] == 'Pending'
-                            ? () async {
-                          TextEditingController controller = TextEditingController(
-                              text: Expense['Amount']); // Treat 'Amount' as a number, using controller
-                          await showDialog<String>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Edit Expense Amount'), // Change the title to reflect Amount
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    TextField(
-                                      controller: controller,
-                                      keyboardType: TextInputType.numberWithOptions(decimal: true), // Allow numeric and decimal input
-                                      decoration: InputDecoration(
-                                        labelText: 'Amount', // Label the field as Amount
-                                        hintText: 'Enter the amount', // Optional hint text
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          // Update value in Expense as amount
-                                          Expense['Amount'] = value; // Store the new value in Amount
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop(); // Close the dialog without saving
-                                    },
-                                    child: Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      // Update the amount (Amount) in Firestore or wherever you want
-                                      if (controller.text.isNotEmpty) {
-                                        _updateExpenseData(Expense['id'], 'Amount', controller.text);
-                                      }
-                                      Navigator.of(context).pop(); // Close the dialog and save the value
-                                    },
-                                    child: Text('Update'),
-                                  ),
-                                ],
-                              );
-                            },
-                          ) ?? '';
-                        }
-                            : null, // Only allow editing if status is 'Pending'
-                      ),
-
-                      DataCell(Text(Expense['status'] ?? 'Pending')), // Status should not be editable
-                      DataCell(IconButton(
+                      trailing: IconButton(
                         icon: Icon(
-                          Expense['status'] == 'Pending' ?
-                          Icons.delete : Icons.check_circle_outline,
-                          color: Expense['status'] == 'Pending' ?
-                          Colors.red : Colors.green,),
-                        onPressed: Expense['status'] == 'Pending' ? () async {
+                          expense['status'] == 'Pending'
+                              ? Icons.delete
+                              : Icons.check_circle_outline,
+                          color: expense['status'] == 'Pending'
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                        onPressed: expense['status'] == 'Pending'
+                            ? () async {
                           bool confirmDelete = await showDialog(
                             context: context,
                             builder: (context) {
                               return AlertDialog(
                                 title: Text('Delete Expense Request'),
-                                content: Text('Are you sure you want to delete this Expense request?'),
+                                content: Text(
+                                    'Are you sure you want to delete this Expense request?'),
                                 actions: [
                                   TextButton(
                                     onPressed: () {
@@ -379,27 +222,40 @@ class _ExpenseState extends State<Expense> {
                           );
 
                           if (confirmDelete) {
-                            await _deleteExpenseData(Expense['id']);
+                            await _deleteExpenseData(expense['id']);
                           }
-                        } : null, // Only allow delete if status is 'Pending'
-                      )),
-                    ]);
-                  }).toList(),
-                ),),
-              if(_hasMoreData)
+                        }
+                            : null,
+                      ),
+                      onTap: expense['status'] == 'Pending'
+                          ? () {
+                        _showEditDialog(expense); // Function to handle edit dialog
+                      }
+                          : null,
+                    ),
+                  );
+                },
+              ),
+              if (_hasMoreData)
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      _currentRowCount += _rowsPerPage; // Increase the number of rows to show
+                      _currentRowCount += _rowsPerPage;
                     });
-                    _fetchExpenseData(); // Fetch the next set of rows
+                    _fetchExpenseData();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blue,
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     minimumSize: Size(150, 40),
                   ),
-                  child: Text('Load More', style: TextStyle(color: Colors.white, fontSize: 10, ),),
+                  child: Text(
+                    'Load More',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -407,7 +263,7 @@ class _ExpenseState extends State<Expense> {
         floatingActionButton: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Align(
-            alignment: Alignment.bottomRight, // Align the button to the bottom-right
+            alignment: Alignment.bottomRight,
             child: FloatingActionButton(
               onPressed: () {
                 Navigator.push(
@@ -415,12 +271,73 @@ class _ExpenseState extends State<Expense> {
                   CupertinoPageRoute(builder: (context) => Expense_apply()),
                 );
               },
-              backgroundColor: AppColors.blue, // Add color to the button
-              child: Icon(Icons.add, color: Colors.white), // Add a plus icon
+              backgroundColor: AppColors.blue,
+              child: Icon(Icons.add, color: Colors.white),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _showEditDialog(Map<String, dynamic> expense) async {
+    // Implement your edit dialog logic here
+    // Use showDialog to display a dialog with text fields for editing
+    // and call _updateExpenseData with the updated values.
+    // Example:
+    TextEditingController startDateController = TextEditingController(text: expense['Start Date']);
+    TextEditingController endDateController = TextEditingController(text: expense['End Date']);
+    TextEditingController amountController = TextEditingController(text: expense['Amount']);
+    String category = expense['Category'];
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Edit Expense'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(controller: startDateController, decoration: InputDecoration(labelText: 'Start Date')),
+                    TextField(controller: endDateController, decoration: InputDecoration(labelText: 'End Date')),
+                    TextField(controller: amountController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Amount')),
+                    DropdownButton<String>(
+                      value: category,
+                      items: Expense_category.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          category = newValue!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
+                TextButton(
+                  onPressed: () async {
+                    await _updateExpenseData(expense['id'], 'Start Date', startDateController.text);
+                    await _updateExpenseData(expense['id'], 'End Date', endDateController.text);
+                    await _updateExpenseData(expense['id'], 'Amount', amountController.text);
+                    await _updateExpenseData(expense['id'], 'Category', category);
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
