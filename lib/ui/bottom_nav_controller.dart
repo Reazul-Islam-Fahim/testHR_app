@@ -3,7 +3,7 @@ import 'package:test_app/const/AppColors.dart';
 import 'package:test_app/ui/bottom_nav_pages/leave.dart';
 import 'package:test_app/ui/bottom_nav_pages/expense.dart';
 import 'package:test_app/ui/bottom_nav_pages/home.dart';
-import 'package:test_app/ui/bottom_nav_pages/profile.dart';
+import 'package:test_app/ui/bottom_nav_pages/more.dart';
 import 'package:test_app/ui/bottom_nav_pages/notification.dart';
 
 class BottomNavController extends StatefulWidget {
@@ -25,7 +25,7 @@ class _BottomNavControllerState extends State<BottomNavController> {
     Expense(),
     Home(),
     Notify(),
-    Profile(),
+    More(),
   ];
   @override
   void initState() {
@@ -63,8 +63,8 @@ class _BottomNavControllerState extends State<BottomNavController> {
               label: "Notification",
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: "Person",
+              icon: Icon(Icons.more_horiz),
+              label: "More",
             ),
           ],
           onTap: (index) {
