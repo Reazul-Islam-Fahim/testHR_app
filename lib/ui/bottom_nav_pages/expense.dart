@@ -13,7 +13,6 @@ class Expense extends StatefulWidget {
 }
 
 class _ExpenseState extends State<Expense> {
-
   bool isLoading = true;
   bool _isDisposed = false;
 
@@ -23,7 +22,6 @@ class _ExpenseState extends State<Expense> {
   int _currentRowCount = 10; // Initial rows to show
   int _rowsPerPage = 10; // Rows to load on each "Load More" click
   bool _hasMoreData = true; // Flag to check if there is more data to load
-
 
   Future<void> _fetchExpenseData() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -35,10 +33,10 @@ class _ExpenseState extends State<Expense> {
           .doc(currentUser!.email)
           .collection("expense-requests");
 
-      QuerySnapshot querySnapshot = await ExpenseCollection
-          .orderBy("submittedAt", descending: true)
-          .limit(_currentRowCount)
-          .get();
+      QuerySnapshot querySnapshot =
+          await ExpenseCollection.orderBy("submittedAt", descending: true)
+              .limit(_currentRowCount)
+              .get();
 
       _hasMoreData = querySnapshot.docs.length == _currentRowCount;
 
@@ -58,12 +56,10 @@ class _ExpenseState extends State<Expense> {
       setState(() {
         isLoading = false;
       });
-
     } catch (e) {
       print("Error fetching data: $e");
     }
   }
-
 
   // Function to update the Expense data in Firestore
   Future<void> _updateExpenseData(
@@ -88,7 +84,6 @@ class _ExpenseState extends State<Expense> {
     }
   }
 
-
   // Function to delete the Expense data from Firestore
   Future<void> _deleteExpenseData(String documentId) async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -104,8 +99,7 @@ class _ExpenseState extends State<Expense> {
       await ExpenseCollection.doc(documentId).delete();
 
       // Show a success toast or dialog
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Expense request deleted successfully')));
 
       // Remove the deleted Expense from the local list and refresh the UI
@@ -117,18 +111,15 @@ class _ExpenseState extends State<Expense> {
     }
   }
 
-
-
   @override
   void initState() {
     super.initState();
     _fetchExpenseData(); // Fetch data when the widget is initialized
   }
 
-
   @override
   void dispose() {
-    _isDisposed = true;  // Mark the widget as disposed
+    _isDisposed = true; // Mark the widget as disposed
     super.dispose();
   }
 
@@ -152,90 +143,108 @@ class _ExpenseState extends State<Expense> {
             children: [
               ExpenseData.isEmpty
                   ? isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : Center(child: Text('No data'))
+                      ? Center(child: CircularProgressIndicator())
+                      : Center(
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                              Image.asset('assets/images/no_data.jpg'),
+                            ]))
                   : ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(), // Disable ListView's scrolling
-                itemCount: ExpenseData.length,
-                itemBuilder: (context, index) {
-                  final expense = ExpenseData[index];
-                  return Container(
-                    margin: EdgeInsets.symmetric(horizontal: 20, vertical: 5), // Add horizontal margin
-                    decoration: BoxDecoration(
-                      color: Colors.white, // White background
-                      borderRadius: BorderRadius.circular(10), // Radial border
-                      boxShadow: [ // Add a subtle shadow for elevation
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      title: Text('Category: ${expense['Category'] ?? ''}'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Start Date: ${expense['Start Date'] ?? ''}'),
-                          Text('End Date: ${expense['End Date'] ?? ''}'),
-                          Text('Amount: ${expense['Amount'] ?? ''}'),
-                          Text('Status: ${expense['status'] ?? 'Pending'}'),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(
-                          expense['status'] == 'Pending'
-                              ? Icons.delete
-                              : Icons.check_circle_outline,
-                          color: expense['status'] == 'Pending'
-                              ? Colors.red
-                              : Colors.green,
-                        ),
-                        onPressed: expense['status'] == 'Pending'
-                            ? () async {
-                          bool confirmDelete = await showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Delete Expense Request'),
-                                content: Text(
-                                    'Are you sure you want to delete this Expense request?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop(true);
-                                    },
-                                    child: Text('Yes'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop(false);
-                                    },
-                                    child: Text('No'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
+                      shrinkWrap: true,
+                      physics:
+                          NeverScrollableScrollPhysics(), // Disable ListView's scrolling
+                      itemCount: ExpenseData.length,
+                      itemBuilder: (context, index) {
+                        final expense = ExpenseData[index];
+                        return Container(
+                          margin: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 5), // Add horizontal margin
+                          decoration: BoxDecoration(
+                            color: Colors.white, // White background
+                            borderRadius:
+                                BorderRadius.circular(10), // Radial border
+                            boxShadow: [
+                              // Add a subtle shadow for elevation
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            title:
+                                Text('Category: ${expense['Category'] ?? ''}'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                    'Start Date: ${expense['Start Date'] ?? ''}'),
+                                Text('End Date: ${expense['End Date'] ?? ''}'),
+                                Text('Amount: ${expense['Amount'] ?? ''}'),
+                                Text(
+                                    'Status: ${expense['status'] ?? 'Pending'}'),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(
+                                expense['status'] == 'Pending'
+                                    ? Icons.delete
+                                    : Icons.check_circle_outline,
+                                color: expense['status'] == 'Pending'
+                                    ? Colors.red
+                                    : Colors.green,
+                              ),
+                              onPressed: expense['status'] == 'Pending'
+                                  ? () async {
+                                      bool confirmDelete = await showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title:
+                                                Text('Delete Expense Request'),
+                                            content: Text(
+                                                'Are you sure you want to delete this Expense request?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(true);
+                                                },
+                                                child: Text('Yes'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(false);
+                                                },
+                                                child: Text('No'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
 
-                          if (confirmDelete) {
-                            await _deleteExpenseData(expense['id']);
-                          }
-                        }
-                            : null,
-                      ),
-                      onTap: expense['status'] == 'Pending'
-                          ? () {
-                        _showEditDialog(expense); // Function to handle edit dialog
-                      }
-                          : null,
+                                      if (confirmDelete) {
+                                        await _deleteExpenseData(expense['id']);
+                                      }
+                                    }
+                                  : null,
+                            ),
+                            onTap: expense['status'] == 'Pending'
+                                ? () {
+                                    _showEditDialog(
+                                        expense); // Function to handle edit dialog
+                                  }
+                                : null,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
               if (_hasMoreData)
                 ElevatedButton(
                   onPressed: () {
@@ -285,9 +294,12 @@ class _ExpenseState extends State<Expense> {
     // Use showDialog to display a dialog with text fields for editing
     // and call _updateExpenseData with the updated values.
     // Example:
-    TextEditingController startDateController = TextEditingController(text: expense['Start Date']);
-    TextEditingController endDateController = TextEditingController(text: expense['End Date']);
-    TextEditingController amountController = TextEditingController(text: expense['Amount']);
+    TextEditingController startDateController =
+        TextEditingController(text: expense['Start Date']);
+    TextEditingController endDateController =
+        TextEditingController(text: expense['End Date']);
+    TextEditingController amountController =
+        TextEditingController(text: expense['Amount']);
     String category = expense['Category'];
 
     await showDialog(
@@ -301,9 +313,16 @@ class _ExpenseState extends State<Expense> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(controller: startDateController, decoration: InputDecoration(labelText: 'Start Date')),
-                    TextField(controller: endDateController, decoration: InputDecoration(labelText: 'End Date')),
-                    TextField(controller: amountController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Amount')),
+                    TextField(
+                        controller: startDateController,
+                        decoration: InputDecoration(labelText: 'Start Date')),
+                    TextField(
+                        controller: endDateController,
+                        decoration: InputDecoration(labelText: 'End Date')),
+                    TextField(
+                        controller: amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(labelText: 'Amount')),
                     DropdownButton<String>(
                       value: category,
                       items: Expense_category.map((String value) {
@@ -322,13 +341,19 @@ class _ExpenseState extends State<Expense> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('Cancel')),
                 TextButton(
                   onPressed: () async {
-                    await _updateExpenseData(expense['id'], 'Start Date', startDateController.text);
-                    await _updateExpenseData(expense['id'], 'End Date', endDateController.text);
-                    await _updateExpenseData(expense['id'], 'Amount', amountController.text);
-                    await _updateExpenseData(expense['id'], 'Category', category);
+                    await _updateExpenseData(
+                        expense['id'], 'Start Date', startDateController.text);
+                    await _updateExpenseData(
+                        expense['id'], 'End Date', endDateController.text);
+                    await _updateExpenseData(
+                        expense['id'], 'Amount', amountController.text);
+                    await _updateExpenseData(
+                        expense['id'], 'Category', category);
                     Navigator.of(context).pop();
                   },
                   child: Text('Save'),
