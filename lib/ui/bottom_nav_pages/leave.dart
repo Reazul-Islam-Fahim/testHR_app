@@ -13,6 +13,9 @@ class Leave extends StatefulWidget {
 }
 
 class _LeaveState extends State<Leave> {
+
+  bool isLoading = true;
+
   List<Map<String, dynamic>> leaveData = [];
   List<String> leave_category = ["Medical", "Paid", "Maternity"];
 
@@ -47,7 +50,11 @@ class _LeaveState extends State<Leave> {
         leaveData.add(leave);
       });
 
-      setState(() {});
+      await Future.delayed(Duration(seconds: 3));
+
+      setState(() {
+        isLoading = false;
+      });
     } catch (e) {
       print("Error fetching data: $e");
     }
@@ -114,18 +121,18 @@ class _LeaveState extends State<Leave> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Center(
-          child: Text(
-            'Leave Report',
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Center(
+            child: Text(
+              'Leave Report',
+            ),
           ),
+          backgroundColor: AppColors.blue,
+          automaticallyImplyLeading: false,
         ),
-        backgroundColor: AppColors.blue,
-        automaticallyImplyLeading: false,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+        body: SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start, // Align content to the top
@@ -133,7 +140,15 @@ class _LeaveState extends State<Leave> {
               FittedBox(
                 fit: BoxFit.cover,
                 child: leaveData.isEmpty
+                ? isLoading
                     ? CircularProgressIndicator()
+                : Center(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/images/no_data.jpg'),
+                        ]))
                     : DataTable(
                   headingRowHeight: 100,
                   columns: const [
@@ -175,7 +190,7 @@ class _LeaveState extends State<Leave> {
                               );
                             },
                           ) ?? '';
-
+        
                           if (newFromDate.isNotEmpty) {
                             setState(() {
                               leave['Start Date'] = newFromDate;
@@ -214,7 +229,7 @@ class _LeaveState extends State<Leave> {
                               );
                             },
                           ) ?? '';
-
+        
                           if (newToDate.isNotEmpty) {
                             setState(() {
                               leave['End Date'] = newToDate;
@@ -296,7 +311,7 @@ class _LeaveState extends State<Leave> {
                               );
                             },
                           );
-
+        
                           if (confirmDelete) {
                             await _deleteLeaveData(leave['id']);
                           }
@@ -323,20 +338,20 @@ class _LeaveState extends State<Leave> {
             ],
           ),
         ),
-      ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Align(
-          alignment: Alignment.bottomRight, // Align the button to the bottom-right
-          child: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                CupertinoPageRoute(builder: (context) => Leave_apply()),
-              );
-            },
-            backgroundColor: AppColors.blue, // Add color to the button
-            child: Icon(Icons.add, color: Colors.white), // Add a plus icon
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Align(
+            alignment: Alignment.bottomRight, // Align the button to the bottom-right
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(builder: (context) => Leave_apply()),
+                );
+              },
+              backgroundColor: AppColors.blue, // Add color to the button
+              child: Icon(Icons.add, color: Colors.white), // Add a plus icon
+            ),
           ),
         ),
       ),
