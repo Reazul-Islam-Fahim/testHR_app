@@ -25,14 +25,13 @@ class _AttendanceReviewState extends State<AttendanceReview> {
 
     try {
       List<Map<String, dynamic>> fetchedData = [];
-      QuerySnapshot employeeSnapshot = await firestore.collection('attendance').get();
+      QuerySnapshot employeeSnapshot =
+          await firestore.collection('attendance').get();
 
       for (var employeeDoc in employeeSnapshot.docs) {
         String employeeId = employeeDoc.id;
 
-        // Debugging: Print employee IDs being processed
-        print("Checking employee: $employeeId for date: $specificDate");
-
+        // Access 'days' subcollection and check for the specific date
         DocumentSnapshot dateDoc = await firestore
             .collection('attendance')
             .doc(employeeId)
@@ -42,7 +41,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
 
         if (dateDoc.exists) {
           Map<String, dynamic> attendanceDetails =
-          dateDoc.data() as Map<String, dynamic>;
+              dateDoc.data() as Map<String, dynamic>;
 
           fetchedData.add({
             'employeeId': employeeId,
@@ -51,11 +50,19 @@ class _AttendanceReviewState extends State<AttendanceReview> {
           });
 
           // Debugging: Print data found
-          print("Found data for $employeeId on $specificDate: $attendanceDetails");
+          print(
+              "Found data for $employeeId on $specificDate: $attendanceDetails");
         } else {
           // Debugging: Print if date doc doesn't exist
           print("No data found for $employeeId on $specificDate");
         }
+      }
+
+      if (fetchedData.isEmpty) {
+        print("No attendance data found for $specificDate");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('No attendance data found for the selected date.'),
+        ));
       }
 
       setState(() {
@@ -142,59 +149,58 @@ class _AttendanceReviewState extends State<AttendanceReview> {
               _isLoading
                   ? Center(child: CircularProgressIndicator())
                   : _attendanceData.isEmpty
-                  ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Image.asset('assets/images/no_data.jpg'),
-                    Text(
-                        'No attendance data found for the selected date.'),
-                  ],
-                ),
-              )
-                  : Expanded(
-                child: ListView.builder(
-                  itemCount: _attendanceData.length,
-                  itemBuilder: (context, index) {
-                    var attendance = _attendanceData[index];
-                    return Container(
-                      margin: EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: ListTile(
-                        title: Text(
-                            'Employee ID: ${attendance['employeeId']}'),
-                        subtitle: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          children: [
-                            Text('Date: ${attendance['date']}'),
-                            Text(
-                                'Check-in: ${attendance['details']['inTime'] ?? 'N/A'}'),
-                            Text(
-                                'Check-out: ${attendance['details']['outTime'] ?? 'N/A'}'),
-                            Text(
-                                'Timestamp: ${attendance['details']['timestamp'] != null ? DateFormat('yyyy-MM-dd HH:mm:ss').format(attendance['details']['timestamp'].toDate()) : 'N/A'}'
-                            ),
-                          ],
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Image.asset('assets/images/no_data.jpg'),
+                              Text(
+                                  'No attendance data found for the selected date.'),
+                            ],
+                          ),
+                        )
+                      : Expanded(
+                          child: ListView.builder(
+                            itemCount: _attendanceData.length,
+                            itemBuilder: (context, index) {
+                              var attendance = _attendanceData[index];
+                              return Container(
+                                margin: EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.3),
+                                      spreadRadius: 2,
+                                      blurRadius: 5,
+                                      offset: Offset(0, 3),
+                                    )
+                                  ],
+                                ),
+                                child: ListTile(
+                                  title: Text(
+                                      'Employee ID: ${attendance['employeeId']}'),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Date: ${attendance['date']}'),
+                                      Text(
+                                          'Check-in: ${attendance['details']['inTime'] ?? 'N/A'}'),
+                                      Text(
+                                          'Check-out: ${attendance['details']['outTime'] ?? 'N/A'}'),
+                                      Text(
+                                          'Timestamp: ${attendance['details']['timestamp'] != null ? DateFormat('yyyy-MM-dd HH:mm:ss').format(attendance['details']['timestamp'].toDate()) : 'N/A'}'),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
             ],
           ),
         ),
