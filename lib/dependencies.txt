@@ -28,8 +28,6 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  image_picker: ^1.1.2
-  provider: ^6.1.2
   flutter:
     sdk: flutter
     google_mobile_ads: ^5.3.1
