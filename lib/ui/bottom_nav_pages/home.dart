@@ -171,6 +171,9 @@ class _HomeState extends State<Home> {
             await firestore.collection('users-form-data').doc(user.email).get();
         if (userDoc.exists) {
           employeeId = userDoc['employee_id'];
+
+          print('Employee ID type: ${employeeId.runtimeType}');
+
           String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
           await firestore
               .collection('attendance')
