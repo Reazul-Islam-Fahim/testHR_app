@@ -161,8 +161,8 @@ class _Leave_applyState extends State<Leave_apply> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),  // Set initial date to today's date
-      firstDate: DateTime(DateTime.now().year - 3),  // Allow user to pick a date 3 years before
-      lastDate: DateTime(DateTime.now().year + 3),  // Allow user to pick a date 3 years ahead
+      firstDate: DateTime(DateTime.now().year - 1),  // Allow user to pick a date 3 years before
+      lastDate: DateTime(DateTime.now().year + 1),  // Allow user to pick a date 3 years ahead
     );
     if (picked != null) {
       setState(() {
@@ -177,8 +177,8 @@ class _Leave_applyState extends State<Leave_apply> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),  // Set initial date to today's date
-      firstDate: DateTime(DateTime.now().year - 3),  // Allow user to pick a date 3 years before
-      lastDate: DateTime(DateTime.now().year + 3),  // Allow user to pick a date 3 years ahead
+      firstDate: DateTime(DateTime.now().year - 1),  // Allow user to pick a date 3 years before
+      lastDate: DateTime(DateTime.now().year + 1),  // Allow user to pick a date 3 years ahead
     );
     if (picked != null) {
       setState(() {
@@ -273,7 +273,7 @@ class _Leave_applyState extends State<Leave_apply> {
                   onPressed: isLoading ? null : _submitForm, // Disable the button when loading
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blue,
-                    padding: EdgeInsets.symmetric(vertical: 14.0),
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
                     textStyle: TextStyle(fontSize: 16),
                   ),
                   child: isLoading
