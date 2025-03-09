@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:test_app/ui/profile.dart';
+import 'package:test_app/ui/review_attendance.dart';
+import 'package:test_app/ui/review_leave.dart';
 import 'dart:convert';
 import '../../const/AppColors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../change_pass.dart';
 import '../login_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
+import '../review_expense.dart';
 
 class More extends StatefulWidget {
   const More({super.key});
@@ -59,27 +61,27 @@ class _MoreState extends State<More> {
     }
   }
 
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> _signOut(BuildContext context) async {
     try {
       await _auth.signOut();
-      if (context.mounted) { //check if context is valid.
-        await Navigator.pushReplacement( //added await.
+      if (context.mounted) {
+        //check if context is valid.
+        await Navigator.pushReplacement(
+          //added await.
           context,
           CupertinoPageRoute(builder: (context) => LoginScreen()),
         );
       }
-
-    } on FirebaseAuthException catch (e) { //more specific error handling.
+    } on FirebaseAuthException catch (e) {
+      //more specific error handling.
       print('Firebase Auth Error signing out: ${e.code} - ${e.message}');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Failed to sign out: ${e.message}'),
         ));
       }
-
     } catch (e) {
       print('Error signing out: $e');
       if (context.mounted) {
@@ -87,10 +89,8 @@ class _MoreState extends State<More> {
           content: Text('Failed to sign out. Please try again.'),
         ));
       }
-
     }
   }
-
 
   @override
   void initState() {
@@ -211,107 +211,219 @@ class _MoreState extends State<More> {
                   height: 50,
                 ),
                 Container(
-                  margin: EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 10),
-
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white38,
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                        ),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.all(
-                              10), // Optional: Adjust padding inside ListTile
-                          title: Column(
-                            // Column as child of title
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start, // Align children to start
-                            children: [
-                              Text(
-                                'Profile',
-                                style: TextStyle(
-                                    color: Colors.black, fontWeight: FontWeight.bold),)
-                            ],
-                          ),
-                          leading: Icon(Icons.person,
-                              color: AppColors.blue), // Optional: Leading icon
-                          trailing: Icon(Icons.arrow_forward_ios,
-                              color: AppColors.blue),
-                          onTap: (){
-                            Navigator.pushReplacement(context, CupertinoPageRoute(builder: (context) => Profile()));
-                          },// Optional: Trailing icon
-                        ),
+                  margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Column(children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white38,
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(
+                            10), // Optional: Adjust padding inside ListTile
+                        title: Column(
+                          // Column as child of title
+                          crossAxisAlignment: CrossAxisAlignment
+                              .start, // Align children to start
+                          children: [
+                            Text(
+                              'Profile',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            )
+                          ],
                         ),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.all(
-                              10), // Optional: Adjust padding inside ListTile
-                          title: Column(
-                            // Column as child of title
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start, // Align children to start
-                            children: [
-                              Text(
-                                'Change Password',
-                                style: TextStyle(
-                                    color: Colors.black, fontWeight: FontWeight.bold), )
-                            ],
-                          ),
-                          leading: Icon(Icons.lock,
-                              color: AppColors.blue), // Optional: Leading icon
-                          trailing: Icon(Icons.arrow_forward_ios,
-                              color: AppColors.blue),
-                          onTap: (){
-                            Navigator.push(
+                        leading: Icon(Icons.person,
+                            color: AppColors.blue), // Optional: Leading icon
+                        trailing: Icon(Icons.arrow_forward_ios,
+                            color: AppColors.blue),
+                        onTap: () {
+                          Navigator.pushReplacement(
                               context,
-                              CupertinoPageRoute(builder: (context) => ChangePasswordScreen()),
-                            );
+                              CupertinoPageRoute(
+                                  builder: (context) => Profile()));
+                        }, // Optional: Trailing icon
+                      ),
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    if (_designation?.toLowerCase() == 'manager' || _designation?.toLowerCase() == 'admin')
+                      if(_designation?.toLowerCase() == 'admin') ...[
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          child: ListTile(
+                            contentPadding: EdgeInsets.all(10),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Review Attendance',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              ],
+                            ),
+                            leading: Icon(Icons.edit_calendar_outlined, color: AppColors.blue),
+                            trailing: Icon(Icons.arrow_forward_ios,
+                                color: AppColors.blue),
+                            onTap: () {
+                              // Replace with your Leave Review page
+                              Navigator.pushReplacement(
+                                  context,
+                                  CupertinoPageRoute(
+                                      builder: (context) =>
+                                          AttendanceReview())); //change to correct page
+                            },
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                      ],
+                      // Wrap conditional widgets in a List<Widget>
+                      ...<Widget>[
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.all(Radius.circular(20)),
+                        ),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.all(10),
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Leave Review',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            ],
+                          ),
+                          leading: Icon(Icons.article, color: AppColors.blue),
+                          trailing: Icon(Icons.arrow_forward_ios,
+                              color: AppColors.blue),
+                          onTap: () {
+                            // Replace with your Leave Review page
+                            Navigator.pushReplacement(
+                                context,
+                                CupertinoPageRoute(
+                                    builder: (context) =>
+                                        LeaveReview())); //change to correct page
                           },
                         ),
                       ),
-                      SizedBox(
-                        height: 20,
-                      ),
+                      SizedBox(height: 20),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white38,
+                          color: Colors.white,
                           borderRadius: BorderRadius.all(Radius.circular(20)),
                         ),
                         child: ListTile(
-                          contentPadding: EdgeInsets.all(
-                              10), // Optional: Adjust padding inside ListTile
+                          contentPadding: EdgeInsets.all(10),
                           title: Column(
-                            // Column as child of title
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start, // Align children to start
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Log Out',
+                                'Expense Review',
                                 style: TextStyle(
-                                    color: Colors.black, fontWeight: FontWeight.bold), )
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
                             ],
                           ),
-                          leading: Icon(Icons.output,
-                              color: AppColors.blue), // Optional: Leading icon
+                          leading: Icon(Icons.account_balance_wallet,
+                              color: AppColors.blue),
                           trailing: Icon(Icons.arrow_forward_ios,
                               color: AppColors.blue),
-                          onTap: ()=> _signOut(context),
+                          onTap: () {
+                            // Replace with your Expense Review page
+                            Navigator.pushReplacement(
+                                context,
+                                CupertinoPageRoute(
+                                    builder: (context) =>
+                                        ExpenseReview())); //change to correct page
+                          },
                         ),
                       ),
-                      SizedBox(
-                        height: 20,
+                      SizedBox(height: 20),
+                    ],
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
-                    ]
-                  ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(
+                            10), // Optional: Adjust padding inside ListTile
+                        title: Column(
+                          // Column as child of title
+                          crossAxisAlignment: CrossAxisAlignment
+                              .start, // Align children to start
+                          children: [
+                            Text(
+                              'Change Password',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            )
+                          ],
+                        ),
+                        leading: Icon(Icons.lock,
+                            color: AppColors.blue), // Optional: Leading icon
+                        trailing: Icon(Icons.arrow_forward_ios,
+                            color: AppColors.blue),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                                builder: (context) => ChangePasswordScreen()),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                      ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(
+                            10), // Optional: Adjust padding inside ListTile
+                        title: Column(
+                          // Column as child of title
+                          crossAxisAlignment: CrossAxisAlignment
+                              .start, // Align children to start
+                          children: [
+                            Text(
+                              'Log Out',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            )
+                          ],
+                        ),
+                        leading: Icon(Icons.output,
+                            color: AppColors.blue), // Optional: Leading icon
+                        trailing: Icon(Icons.arrow_forward_ios,
+                            color: AppColors.blue),
+                        onTap: () => _signOut(context),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                  ]),
                 ),
               ]),
         ),
