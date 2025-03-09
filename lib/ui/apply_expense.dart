@@ -175,9 +175,9 @@ class _Expense_applyState extends State<Expense_apply> {
       context: context,
       initialDate: DateTime.now(), // Set initial date to today's date
       firstDate: DateTime(
-          DateTime.now().year - 3), // Allow user to pick a date 3 years before
+          DateTime.now().year - 1), // Allow user to pick a date 3 years before
       lastDate: DateTime(
-          DateTime.now().year + 3), // Allow user to pick a date 3 years ahead
+          DateTime.now().year + 1), // Allow user to pick a date 3 years ahead
     );
     if (picked != null) {
       setState(() {
@@ -193,9 +193,9 @@ class _Expense_applyState extends State<Expense_apply> {
       context: context,
       initialDate: DateTime.now(), // Set initial date to today's date
       firstDate: DateTime(
-          DateTime.now().year - 3), // Allow user to pick a date 3 years before
+          DateTime.now().year - 1), // Allow user to pick a date 3 years before
       lastDate: DateTime(
-          DateTime.now().year + 3), // Allow user to pick a date 3 years ahead
+          DateTime.now().year + 1), // Allow user to pick a date 3 years ahead
     );
     if (picked != null) {
       setState(() {
@@ -212,7 +212,7 @@ class _Expense_applyState extends State<Expense_apply> {
       child: Scaffold(
         appBar: AppBar(
           title: Center(
-            child: Text('Apply for Expense_apply'),
+            child: Text('Apply for Expense'),
           ),
           backgroundColor: AppColors.blue,
         ),
