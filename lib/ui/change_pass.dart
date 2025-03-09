@@ -2,10 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:test_app/ui/bottom_nav_pages/more.dart';
-
 import '../const/AppColors.dart';
-import '../widgets/customButton.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -68,9 +65,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             timeInSecForIosWeb: 1,
             backgroundColor: Colors.green,
             textColor: Colors.white,
-            fontSize: 16.0
-        );
-
+            fontSize: 16.0);
       } else {
         setState(() {
           _isLoading = false;
@@ -82,8 +77,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             timeInSecForIosWeb: 1,
             backgroundColor: Colors.red,
             textColor: Colors.white,
-            fontSize: 16.0
-        );
+            fontSize: 16.0);
       }
     } catch (e) {
       setState(() {
@@ -99,8 +93,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           timeInSecForIosWeb: 1,
           backgroundColor: Colors.red,
           textColor: Colors.white,
-          fontSize: 16.0
-      );
+          fontSize: 16.0);
     }
   }
 
@@ -144,20 +137,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               _isLoading
                   ? CircularProgressIndicator()
                   : Center(
-                    child: ElevatedButton(
-                                    onPressed: _changePassword,
-                                    style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.blue,
-                    padding: EdgeInsets.symmetric(vertical: 20.0,horizontal: 50),
-                    textStyle: TextStyle(fontSize: 16),
-                                    ),
-                                    child: Text('Change Password',style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                                    ),),
-                                  ),
-                  ),
+                      child: ElevatedButton(
+                        onPressed: _changePassword,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          padding: EdgeInsets.symmetric(
+                              vertical: 20.0, horizontal: 50),
+                          textStyle: TextStyle(fontSize: 16),
+                        ),
+                        child: Text(
+                          'Change Password',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),
