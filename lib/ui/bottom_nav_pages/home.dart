@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,7 +28,10 @@ class _HomeState extends State<Home> {
   String employeeId = '';
   late FirebaseFirestore firestore;
   late Timer _timer;
-  File? _image;
+  String? _imageUrl;
+  String? _userName;
+  bool _isLoading = false;
+  bool _hasError = false;
   String location = 'Fetching location...';
   String inLatitude = 'N/A';
   String inLongitude = 'N/A';
@@ -42,6 +43,7 @@ class _HomeState extends State<Home> {
     _startTimer();
     _loadState();
     fetchLeaveData();
+    _fetchUserData();
   }
 
   @override
@@ -60,6 +62,42 @@ class _HomeState extends State<Home> {
       });
     });
   }
+
+
+  Future<void> _fetchUserData() async {
+    setState(() {
+      _isLoading = true;
+      _hasError = false; // Reset error state
+    });
+
+    try {
+      // Replace with your API URL to fetch user data
+      final response = await http.get(Uri.parse('http://192.168.3.228:7000/get-user-data'));
+
+      if (response.statusCode == 200) {
+        // Parse the JSON response
+        final data = json.decode(response.body);
+
+        setState(() {
+          _imageUrl = data['image'];
+          _userName = data['name'];
+        });
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } catch (e) {
+      setState(() {
+        _hasError = true;
+      });
+      print("Error fetching data: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+
 
   // Fetch leave data from API
   Future<void> fetchLeaveData() async {
@@ -210,17 +248,6 @@ class _HomeState extends State<Home> {
     }
   }
 
-
-  // Pick image from gallery
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() => _image = File(image.path));
-    }
-  }
-
-
   // Helper methods
   String getCurrentTime() => DateFormat('HH:mm:ss').format(DateTime.now());
   String getCurrentDateTime() =>
@@ -289,26 +316,19 @@ class _HomeState extends State<Home> {
                   Positioned(
                     top: 20,
                     child: Column(children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap:
-                            _pickImage, // When the user taps the CircleAvatar, they can pick a new image
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.white,
-                          backgroundImage: _image != null
-                              ? FileImage(
-                                  _image!) // Display the selected image if available
-                              : AssetImage('assets/images/user1.jpg')
-                                  as ImageProvider, // No image, will show a placeholder
-                          child: _image == null // If no image, show icon
-                              ? Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 30,
-                                )
-                              : null, // No icon when image is present
-                        ),
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white,
+                        backgroundImage: _imageUrl != null
+                            ? NetworkImage(_imageUrl!) // Use the image URL from the API
+                            : AssetImage('assets/images/user1.jpg') as ImageProvider, // Placeholder image
+                        child: _imageUrl == null && !_isLoading && !_hasError // Show camera icon if no image
+                            ? Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 30,
+                        )
+                            : null,
                       ),
                       SizedBox(
                         height: 20,
@@ -316,13 +336,17 @@ class _HomeState extends State<Home> {
                       Container(
                         width: MediaQuery.of(context).size.width,
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'Ikhtiar Uddin Mohammad Bin Bokhtiar Kholji',
+                        child: _isLoading
+                            ? CircularProgressIndicator() // Loading indicator while data is being fetched
+                            : _hasError
+                            ? Text("Error loading user data", style: TextStyle(color: Colors.red)) // Error message
+                            : Text(
+                          _userName ?? 'User Name', // Display user name or fallback
                           style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                           softWrap: true, // Automatically wraps the text
                           overflow: TextOverflow
                               .ellipsis, // Adds ellipsis if text overflows
