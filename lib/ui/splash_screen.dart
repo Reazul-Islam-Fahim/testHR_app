@@ -38,13 +38,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 'assets/images/radiant.png',
                 fit: BoxFit.contain,
               ),
-              // Text(
-              //   'Radiant HR',
-              //   style: TextStyle(
-              //       color: Colors.white,
-              //       fontSize: 44.sp,
-              //       fontWeight: FontWeight.bold),
-              // ),
               SizedBox(
                 height: 10.h,
               ),
