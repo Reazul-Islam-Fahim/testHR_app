@@ -25,33 +25,38 @@ class _AttendanceReviewState extends State<AttendanceReview> {
 
     try {
       List<Map<String, dynamic>> fetchedData = [];
+
+      // Query all employee records
       QuerySnapshot employeeSnapshot = await firestore.collection('attendance').get();
+      print("Total employees found: ${employeeSnapshot.docs.length}");
 
       for (var employeeDoc in employeeSnapshot.docs) {
         String employeeId = employeeDoc.id;
+        print("Checking employee: $employeeId");
+        print("Document ID Type: ${employeeId.runtimeType}");
 
-        // Access 'days' subcollection and check for the specific date
+
+        // Access 'days' subcollection and fetch the document with the specific date as the ID
         DocumentSnapshot dateDoc = await firestore
             .collection('attendance')
             .doc(employeeId)
             .collection('days')
-            .doc(specificDate)
+            .doc(specificDate) // Use the date as the document ID
             .get();
 
-        if (dateDoc.exists) {
-          Map<String, dynamic> attendanceDetails =
-          dateDoc.data() as Map<String, dynamic>;
+        print("Document ID Type: ${employeeId.runtimeType}");
 
+        if (dateDoc.exists) {
+          print("Data found for $employeeId on $specificDate");
+          Map<String, dynamic> attendanceDetails = dateDoc.data() as Map<String, dynamic>;
+
+          // Add the matching attendance data to the list
           fetchedData.add({
             'employeeId': employeeId,
             'date': specificDate,
             'details': attendanceDetails,
           });
-
-          // Debugging: Print data found
-          print("Found data for $employeeId on $specificDate: $attendanceDetails");
         } else {
-          // Debugging: Print if date doc doesn't exist
           print("No data found for $employeeId on $specificDate");
         }
       }
@@ -61,6 +66,8 @@ class _AttendanceReviewState extends State<AttendanceReview> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('No attendance data found for the selected date.'),
         ));
+      } else {
+        print("Fetched data: $fetchedData");
       }
 
       setState(() {
@@ -77,6 +84,30 @@ class _AttendanceReviewState extends State<AttendanceReview> {
       ));
     }
   }
+
+
+  // void testFirestoreConnection() async {
+  //   try {
+  //     String docId = '1001';  // Replace with the actual employee ID
+  //     print('Querying for document with ID: $docId');
+  //
+  //     // Query the correct path for the document
+  //     DocumentSnapshot testSnapshot = await firestore
+  //         .collection('attendance')
+  //         .doc('1001')
+  //         .collection('days')
+  //         .doc('2025-03-06')
+  //         .get();
+  //
+  //     if (testSnapshot.exists) {
+  //       print("Document found: ${testSnapshot.id}, Data: ${testSnapshot.data()}");
+  //     } else {
+  //       print("Document '$docId' not found in the 'attendance' collection.");
+  //     }
+  //   } catch (e) {
+  //     print("Test query error: $e");
+  //   }
+  // }
 
 
   @override
@@ -130,6 +161,9 @@ class _AttendanceReviewState extends State<AttendanceReview> {
                     ));
                   }
                 },
+                // onPressed: () {
+                //   testFirestoreConnection();
+                // },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.blue,
                   padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 20),
