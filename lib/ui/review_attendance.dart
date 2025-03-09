@@ -25,8 +25,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
 
     try {
       List<Map<String, dynamic>> fetchedData = [];
-      QuerySnapshot employeeSnapshot =
-          await firestore.collection('attendance').get();
+      QuerySnapshot employeeSnapshot = await firestore.collection('attendance').get();
 
       for (var employeeDoc in employeeSnapshot.docs) {
         String employeeId = employeeDoc.id;
@@ -41,7 +40,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
 
         if (dateDoc.exists) {
           Map<String, dynamic> attendanceDetails =
-              dateDoc.data() as Map<String, dynamic>;
+          dateDoc.data() as Map<String, dynamic>;
 
           fetchedData.add({
             'employeeId': employeeId,
@@ -50,8 +49,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
           });
 
           // Debugging: Print data found
-          print(
-              "Found data for $employeeId on $specificDate: $attendanceDetails");
+          print("Found data for $employeeId on $specificDate: $attendanceDetails");
         } else {
           // Debugging: Print if date doc doesn't exist
           print("No data found for $employeeId on $specificDate");
@@ -79,6 +77,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
       ));
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
