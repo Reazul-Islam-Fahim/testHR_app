@@ -161,20 +161,26 @@ class _HomeState extends State<Home> {
     }
   }
 
-  // Save attendance state to Firestore
-  Future<void> _saveState() async {
+
+  Future<void> _saveState(String attendanceStatus, Position geoPosition) async {
     try {
       setState(() => isLoading = true);
+
+      // Get the current user
       User? user = FirebaseAuth.instance.currentUser;
+
       if (user != null) {
-        DocumentSnapshot userDoc =
-            await firestore.collection('users-form-data').doc(user.email).get();
+        // Fetch user document from Firestore
+        DocumentSnapshot userDoc = await firestore.collection('users-form-data').doc(user.email).get();
+
         if (userDoc.exists) {
+          // Retrieve employee data
           employeeId = userDoc['employee_id'];
 
-          print('Employee ID type: ${employeeId.runtimeType}');
-
+          // Get current date
           String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+          // Store attendance data in Firestore
           await firestore
               .collection('attendance')
               .doc(employeeId)
@@ -187,10 +193,13 @@ class _HomeState extends State<Home> {
             'inTime': inTime,
             'outTime': outTime,
             'location': location,
-            'latitude': inLatitude,
-            'longitude': inLongitude,
+            'latitude': geoPosition.latitude,
+            'longitude': geoPosition.longitude,
+            'attendanceStatus': attendanceStatus, // Store inside/outside status
             'timestamp': getCurrentDateTime(),
           });
+
+          print('Attendance status saved: $attendanceStatus');
         }
       }
     } catch (e) {
@@ -198,11 +207,19 @@ class _HomeState extends State<Home> {
     } finally {
       setState(() => isLoading = false);
     }
+
+    print('Employee ID: $employeeId');
+    List<int> charCodes = employeeId.codeUnits;
+    print("Character Codes: $charCodes");
   }
 
 
-  // Function to get the current location and reverse geocode it to an address
-  Future<void> _getLocation() async {
+
+  Future<Position> _getLocation() async {
+    // Office location (replace with actual coordinates)
+    const double officeLatitude = 23.7936; // Example latitude
+    const double officeLongitude = 90.4111; // Example longitude
+
     // First, check and request permissions
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -215,7 +232,7 @@ class _HomeState extends State<Home> {
       setState(() {
         location = 'Location permission denied forever.';
       });
-      return;
+      return Future.error('Location permission denied forever');
     }
 
     try {
@@ -224,20 +241,72 @@ class _HomeState extends State<Home> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      setState(() {
-        location = 'Latitude: ${geoPosition.latitude}, Longitude: ${geoPosition.longitude}';
-        inLatitude = '${geoPosition.latitude}';
-        inLongitude = '${geoPosition.longitude}';
-      });
+      // Calculate the distance between current location and office location
+      double distanceInMeters = Geolocator.distanceBetween(
+        geoPosition.latitude,
+        geoPosition.longitude,
+        officeLatitude,
+        officeLongitude,
+      );
+
+      // Check if the employee is within 70 meters of the office
+      if (distanceInMeters <= 70) {
+        // Employee is inside the office, save attendance
+        setState(() {
+          location = 'Inside Office. Attendance added.';
+          inLatitude = '${geoPosition.latitude}';
+          inLongitude = '${geoPosition.longitude}';
+        });
+      } else {
+        // Show alert dialog if outside the office
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Office Location'),
+              content: Text('Are you inside the office or outside?'),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    // If inside office, proceed with "inside" status
+                    await _saveState('inside', geoPosition); // Pass 'inside' status
+
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Inside'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // If outside office, proceed with "outside" status
+                    await _saveState('outside', geoPosition); // Pass 'outside' status
+
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Outside'),
+                ),
+              ],
+            );
+          },
+        );
+
+        setState(() {
+          location = 'Outside Office. Please confirm attendance status.';
+        });
+      }
 
       print('Location fetched: Latitude: ${geoPosition.latitude}, Longitude: ${geoPosition.longitude}');
+
+      return geoPosition;
+
     } catch (e) {
       print('Failed to get location: $e');
       setState(() {
         location = 'Failed to get location: $e';
       });
+      return Future.error('Failed to get location');
     }
   }
+
 
 
   Future<void> checkPermissions() async {
@@ -263,6 +332,9 @@ class _HomeState extends State<Home> {
 
   // New async function to handle the switch change
   Future<void> _handleSwitchChange(bool val) async {
+
+    Position? geoPosition;
+
     // First update the UI state inside setState without async operations
     setState(() {
       if (inTimeCaptured && outTimeCaptured) {
@@ -288,11 +360,16 @@ class _HomeState extends State<Home> {
     // Now perform the async operations outside of setState
     if (isSwitched) {
       await checkPermissions();
-      await _getLocation();
+      geoPosition = await _getLocation();
     }
 
     // After fetching location, save the state
-    await _saveState();
+    if (geoPosition != null) {
+      String attendanceStatus = isSwitched ? 'inside' : 'outside'; // Determine status based on switch state
+      await _saveState(attendanceStatus, geoPosition); // Pass the status and geoPosition to _saveState()
+    } else {
+      print('Failed to fetch location.');
+    }
   }
 
 
