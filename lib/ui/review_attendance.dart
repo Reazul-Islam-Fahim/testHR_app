@@ -19,6 +19,9 @@ class _AttendanceReviewState extends State<AttendanceReview> {
   TextEditingController _dateController = TextEditingController();
 
   Future<void> _fetchAttendanceData(String specificDate) async {
+    print("Specific Date: $specificDate");
+    print("Specific Date Type: ${specificDate.runtimeType}");
+    specificDate = specificDate.trim(); // Remove leading/trailing spaces
     setState(() {
       _isLoading = true;
     });
@@ -34,7 +37,6 @@ class _AttendanceReviewState extends State<AttendanceReview> {
         String employeeId = employeeDoc.id;
         print("Checking employee: $employeeId");
         print("Document ID Type: ${employeeId.runtimeType}");
-
 
         // Access 'days' subcollection and fetch the document with the specific date as the ID
         DocumentSnapshot dateDoc = await firestore
@@ -85,30 +87,28 @@ class _AttendanceReviewState extends State<AttendanceReview> {
     }
   }
 
+  // Function to open the date picker
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(), // Default date (today)
+      firstDate: DateTime(2000), // Earliest selectable date
+      lastDate: DateTime(2101), // Latest selectable date
+    );
 
-  // void testFirestoreConnection() async {
-  //   try {
-  //     String docId = '1001';  // Replace with the actual employee ID
-  //     print('Querying for document with ID: $docId');
-  //
-  //     // Query the correct path for the document
-  //     DocumentSnapshot testSnapshot = await firestore
-  //         .collection('attendance')
-  //         .doc('1001')
-  //         .collection('days')
-  //         .doc('2025-03-06')
-  //         .get();
-  //
-  //     if (testSnapshot.exists) {
-  //       print("Document found: ${testSnapshot.id}, Data: ${testSnapshot.data()}");
-  //     } else {
-  //       print("Document '$docId' not found in the 'attendance' collection.");
-  //     }
-  //   } catch (e) {
-  //     print("Test query error: $e");
-  //   }
-  // }
+    if (picked != null) {
+      // Format the selected date as 'yyyy-MM-dd'
+      String formattedDate = DateFormat('yyyy-MM-dd').format(picked);
 
+      // Update the TextField with the selected date
+      setState(() {
+        _dateController.text = formattedDate;
+      });
+
+      // Fetch attendance data for the selected date
+      _fetchAttendanceData(formattedDate);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,16 +138,22 @@ class _AttendanceReviewState extends State<AttendanceReview> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
+              // Date Picker Input Field
               TextField(
                 controller: _dateController,
                 decoration: InputDecoration(
-                  labelText: 'Enter Date (YYYY-MM-DD)',
+                  labelText: 'Select Date (YYYY-MM-DD)',
                   border: OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.calendar_today),
+                    onPressed: () => _selectDate(context), // Open date picker
+                  ),
                   errorText: _dateController.text.isEmpty
-                      ? 'Please enter a date'
+                      ? 'Please select a date'
                       : null,
                 ),
-                keyboardType: TextInputType.datetime,
+                readOnly: true, // Prevent manual input
+                onTap: () => _selectDate(context), // Open date picker on tap
               ),
               SizedBox(height: 20),
               ElevatedButton(
@@ -157,13 +163,10 @@ class _AttendanceReviewState extends State<AttendanceReview> {
                     _fetchAttendanceData(specificDate);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Please enter a valid date'),
+                      content: Text('Please select a valid date'),
                     ));
                   }
                 },
-                // onPressed: () {
-                //   testFirestoreConnection();
-                // },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.blue,
                   padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 20),
@@ -182,58 +185,58 @@ class _AttendanceReviewState extends State<AttendanceReview> {
               _isLoading
                   ? Center(child: CircularProgressIndicator())
                   : _attendanceData.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Image.asset('assets/images/no_data.jpg'),
-                              Text(
-                                  'No attendance data found for the selected date.'),
-                            ],
-                          ),
-                        )
-                      : Expanded(
-                          child: ListView.builder(
-                            itemCount: _attendanceData.length,
-                            itemBuilder: (context, index) {
-                              var attendance = _attendanceData[index];
-                              return Container(
-                                margin: EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      spreadRadius: 2,
-                                      blurRadius: 5,
-                                      offset: Offset(0, 3),
-                                    )
-                                  ],
-                                ),
-                                child: ListTile(
-                                  title: Text(
-                                      'Employee ID: ${attendance['employeeId']}'),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Date: ${attendance['date']}'),
-                                      Text(
-                                          'Check-in: ${attendance['details']['inTime'] ?? 'N/A'}'),
-                                      Text(
-                                          'Check-out: ${attendance['details']['outTime'] ?? 'N/A'}'),
-                                      Text(
-                                          'Timestamp: ${attendance['details']['timestamp'] != null ? DateFormat('yyyy-MM-dd HH:mm:ss').format(attendance['details']['timestamp'].toDate()) : 'N/A'}'),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                  ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image.asset('assets/images/no_data.jpg'),
+                    Text(
+                        'No attendance data found for the selected date.'),
+                  ],
+                ),
+              )
+                  : Expanded(
+                child: ListView.builder(
+                  itemCount: _attendanceData.length,
+                  itemBuilder: (context, index) {
+                    var attendance = _attendanceData[index];
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          )
+                        ],
+                      ),
+                      child: ListTile(
+                        title: Text(
+                            'Employee ID: ${attendance['employeeId']}'),
+                        subtitle: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text('Date: ${attendance['date']}'),
+                            Text(
+                                'Check-in: ${attendance['details']['inTime'] ?? 'N/A'}'),
+                            Text(
+                                'Check-out: ${attendance['details']['outTime'] ?? 'N/A'}'),
+                            Text(
+                                'Timestamp: ${attendance['details']['timestamp'] != null ? DateFormat('yyyy-MM-dd HH:mm:ss').format(attendance['details']['timestamp'].toDate()) : 'N/A'}'),
+                          ],
                         ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
