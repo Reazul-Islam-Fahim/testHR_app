@@ -14,7 +14,6 @@ class AttendanceReview extends StatefulWidget {
 }
 
 class _AttendanceReviewState extends State<AttendanceReview> {
-  List<Map<String, dynamic>> _attendanceData = [];
   List<Map<String, dynamic>> _filteredAttendanceData = [];
   bool _isLoading = false;
   final TextEditingController _dateController = TextEditingController();
@@ -65,22 +64,15 @@ class _AttendanceReviewState extends State<AttendanceReview> {
         }
 
         setState(() {
-          _attendanceData = fetchedData;
           _filteredAttendanceData = fetchedData; // Show all data by default
         });
       } else {
-        setState(() {
-          _attendanceData = [];
-        });
         print("Failed API Response: ${response.statusCode} - ${response.body}");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to fetch attendance data')),
         );
       }
     } catch (e) {
-      setState(() {
-        _attendanceData = [];
-      });
       print("Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
@@ -112,22 +104,6 @@ class _AttendanceReviewState extends State<AttendanceReview> {
     }
   }
 
-  // Function to filter attendance data by employee ID
-  void _filterByEmployeeId(String employeeId) {
-    if (employeeId.isEmpty) {
-      setState(() {
-        _filteredAttendanceData =
-            _attendanceData; // Show all if no employee ID is entered
-      });
-    } else {
-      setState(() {
-        _filteredAttendanceData = _attendanceData
-            .where((attendance) =>
-                attendance['employeeId'].toString().contains(employeeId))
-            .toList(); // Filter by employee ID
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -186,12 +162,6 @@ class _AttendanceReviewState extends State<AttendanceReview> {
                 decoration: InputDecoration(
                   labelText: 'Search by Employee ID',
                   border: OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.search),
-                    onPressed: () {
-                      _filterByEmployeeId(_employeeIdController.text);
-                    },
-                  ),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -208,7 +178,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: AppColors.blue,
                   padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 20),
                   textStyle: TextStyle(fontSize: 16),
                 ),
@@ -231,7 +201,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
                             children: [
                               Image.asset('assets/images/no_data.jpg'),
                               Text(
-                                  'No attendance data found for the selected date.'),
+                                  'No attendance data found for the selected date or employee id.'),
                             ],
                           ),
                         )
