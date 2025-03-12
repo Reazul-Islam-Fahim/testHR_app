@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart'; // For efficient image loading
+import 'package:image_picker/image_picker.dart'; // For picking images
+import 'package:firebase_storage/firebase_storage.dart'; // For Firebase storage
+import 'dart:io';
 import '../../const/AppColors.dart';
 import '../apply_Expense.dart';
 
@@ -20,9 +23,45 @@ class _ExpenseState extends State<Expense> {
   List<Map<String, dynamic>> ExpenseData = [];
   List<String> Expense_category = ["A", "B", "C"];
 
-  int _currentRowCount = 10; // Initial rows to show
-  int _rowsPerPage = 10; // Rows to load on each "Load More" click
-  bool _hasMoreData = true; // Flag to check if there is more data to load
+  int _currentRowCount = 10;
+  int _rowsPerPage = 10;
+  bool _hasMoreData = true;
+
+  List<File> _pickedImages = [];
+
+  // Picked images for the expense
+  Future<void> _pickImages() async {
+    final ImagePicker picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage();
+
+    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+      setState(() {
+        _pickedImages = pickedFiles.map((file) => File(file.path)).toList();
+      });
+    }
+  }
+
+  // Upload images to Firebase Storage
+  Future<List<String>> _uploadImages() async {
+    FirebaseStorage storage = FirebaseStorage.instance;
+    List<String> imageUrls = [];
+
+    for (var image in _pickedImages) {
+      try {
+        String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+        Reference storageRef = storage.ref().child('expense_images/$fileName');
+        UploadTask uploadTask = storageRef.putFile(image);
+        TaskSnapshot snapshot = await uploadTask;
+
+        String imageUrl = await snapshot.ref.getDownloadURL();
+        imageUrls.add(imageUrl);
+      } catch (e) {
+        print("Error uploading image: $e");
+      }
+    }
+
+    return imageUrls;
+  }
 
   Future<void> _fetchExpenseData() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -44,16 +83,14 @@ class _ExpenseState extends State<Expense> {
       ExpenseData.clear();
 
       querySnapshot.docs.forEach((doc) {
-        // Include the document ID as part of the data
         Map<String, dynamic> Expense = doc.data() as Map<String, dynamic>;
-        Expense['id'] = doc.id; // Save the document ID
+        Expense['id'] = doc.id;
         ExpenseData.add(Expense);
       });
 
       await Future.delayed(Duration(seconds: 3));
 
       if (_isDisposed) return;
-      // Check if the widget is still mounted before calling setState
       setState(() {
         isLoading = false;
       });
@@ -62,7 +99,6 @@ class _ExpenseState extends State<Expense> {
     }
   }
 
-  // Function to update the Expense data in Firestore
   Future<void> _updateExpenseData(
       String documentId, String field, String newValue) async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -74,10 +110,7 @@ class _ExpenseState extends State<Expense> {
           .doc(currentUser!.email)
           .collection("expense-requests");
 
-      // Update the specific field in the Firestore document
       await ExpenseCollection.doc(documentId).update({field: newValue});
-
-      // Show a success toast or dialog
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Data updated successfully')));
     } catch (e) {
@@ -85,7 +118,6 @@ class _ExpenseState extends State<Expense> {
     }
   }
 
-  // Function to delete the Expense data from Firestore
   Future<void> _deleteExpenseData(String documentId) async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     var currentUser = _auth.currentUser;
@@ -96,14 +128,10 @@ class _ExpenseState extends State<Expense> {
           .doc(currentUser!.email)
           .collection("expense-requests");
 
-      // Delete the Firestore document
       await ExpenseCollection.doc(documentId).delete();
-
-      // Show a success toast or dialog
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Expense request deleted successfully')));
 
-      // Remove the deleted Expense from the local list and refresh the UI
       setState(() {
         ExpenseData.removeWhere((Expense) => Expense['id'] == documentId);
       });
@@ -112,15 +140,109 @@ class _ExpenseState extends State<Expense> {
     }
   }
 
+  void _showEditDialog(Map<String, dynamic> expense) async {
+    TextEditingController startDateController =
+    TextEditingController(text: expense['Start Date']);
+    TextEditingController endDateController =
+    TextEditingController(text: expense['End Date']);
+    TextEditingController amountController =
+    TextEditingController(text: expense['Amount']);
+    String category = expense['Category'];
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Edit Expense'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                        controller: startDateController,
+                        decoration: InputDecoration(labelText: 'Start Date')),
+                    TextField(
+                        controller: endDateController,
+                        decoration: InputDecoration(labelText: 'End Date')),
+                    TextField(
+                        controller: amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(labelText: 'Amount')),
+                    DropdownButton<String>(
+                      value: category,
+                      items: Expense_category.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          category = newValue!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    Text('Selected Images:'),
+                    _pickedImages.isEmpty
+                        ? Text('No images selected')
+                        : Wrap(
+                      spacing: 10,
+                      children: _pickedImages
+                          .map((image) => Image.file(image, width: 50, height: 50))
+                          .toList(),
+                    ),
+                    TextButton(
+                      onPressed: _pickImages,
+                      child: Text('Pick Images'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('Cancel')),
+                TextButton(
+                  onPressed: () async {
+                    await _updateExpenseData(
+                        expense['id'], 'Start Date', startDateController.text);
+                    await _updateExpenseData(
+                        expense['id'], 'End Date', endDateController.text);
+                    await _updateExpenseData(
+                        expense['id'], 'Amount', amountController.text);
+                    await _updateExpenseData(
+                        expense['id'], 'Category', category);
+
+                    if (_pickedImages.isNotEmpty) {
+                      List<String> imageUrls = await _uploadImages();
+                      await _updateExpenseData(
+                          expense['id'], 'imageUrls', imageUrls as String);
+                    }
+
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    _fetchExpenseData(); // Fetch data when the widget is initialized
+    _fetchExpenseData();
   }
 
   @override
   void dispose() {
-    _isDisposed = true; // Mark the widget as disposed
+    _isDisposed = true;
     super.dispose();
   }
 
@@ -147,28 +269,27 @@ class _ExpenseState extends State<Expense> {
                   ? isLoading
                   ? Center(child: CircularProgressIndicator())
                   : Center(
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Image.asset('assets/images/no_data.jpg'),
-                      ]))
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image.asset('assets/images/no_data.jpg'),
+                  ],
+                ),
+              )
                   : ListView.builder(
                 shrinkWrap: true,
-                physics:
-                NeverScrollableScrollPhysics(), // Disable ListView's scrolling
+                physics: NeverScrollableScrollPhysics(),
                 itemCount: ExpenseData.length,
                 itemBuilder: (context, index) {
                   final expense = ExpenseData[index];
                   return Container(
                     margin: EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 5), // Add horizontal margin
+                        horizontal: 20, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.white, // White background
-                      borderRadius:
-                      BorderRadius.circular(10), // Radial border
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
-                        // Add a subtle shadow for elevation
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.3),
                           spreadRadius: 2,
@@ -186,11 +307,11 @@ class _ExpenseState extends State<Expense> {
                           Text('End Date: ${expense['End Date'] ?? ''}'),
                           Text('Amount: ${expense['Amount'] ?? ''}'),
                           Text('Status: ${expense['status'] ?? 'Pending'}'),
-                          // Check if the image URL is available
-                          if (expense['imageUrls'] != null && expense['imageUrls'] is List && expense['imageUrls'].isNotEmpty)
+                          if (expense['imageUrls'] != null &&
+                              expense['imageUrls'] is List &&
+                              expense['imageUrls'].isNotEmpty)
                             GestureDetector(
                               onTap: () {
-                                // Show images in full screen or navigate to a new screen
                                 showDialog(
                                   context: context,
                                   builder: (context) {
@@ -200,12 +321,10 @@ class _ExpenseState extends State<Expense> {
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            // Loop through all image URLs and display each one
                                             for (var imageUrl in expense['imageUrls'])
                                               CachedNetworkImage(
                                                 imageUrl: imageUrl,
-                                                placeholder: (context, url) =>
-                                                    Center(child: CircularProgressIndicator()),
+                                                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
                                                 errorWidget: (context, url, error) => Icon(Icons.error),
                                               ),
                                           ],
@@ -269,7 +388,7 @@ class _ExpenseState extends State<Expense> {
                       ),
                       onTap: expense['status'] == 'Pending'
                           ? () {
-                        _showEditDialog(expense); // Function to handle edit dialog
+                        _showEditDialog(expense);
                       }
                           : null,
                     ),
@@ -317,83 +436,6 @@ class _ExpenseState extends State<Expense> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showEditDialog(Map<String, dynamic> expense) async {
-    // Implement your edit dialog logic here
-    // Use showDialog to display a dialog with text fields for editing
-    // and call _updateExpenseData with the updated values.
-    // Example:
-    TextEditingController startDateController =
-    TextEditingController(text: expense['Start Date']);
-    TextEditingController endDateController =
-    TextEditingController(text: expense['End Date']);
-    TextEditingController amountController =
-    TextEditingController(text: expense['Amount']);
-    String category = expense['Category'];
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Edit Expense'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                        controller: startDateController,
-                        decoration: InputDecoration(labelText: 'Start Date')),
-                    TextField(
-                        controller: endDateController,
-                        decoration: InputDecoration(labelText: 'End Date')),
-                    TextField(
-                        controller: amountController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: 'Amount')),
-                    DropdownButton<String>(
-                      value: category,
-                      items: Expense_category.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          category = newValue!;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel')),
-                TextButton(
-                  onPressed: () async {
-                    await _updateExpenseData(
-                        expense['id'], 'Start Date', startDateController.text);
-                    await _updateExpenseData(
-                        expense['id'], 'End Date', endDateController.text);
-                    await _updateExpenseData(
-                        expense['id'], 'Amount', amountController.text);
-                    await _updateExpenseData(
-                        expense['id'], 'Category', category);
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 }
