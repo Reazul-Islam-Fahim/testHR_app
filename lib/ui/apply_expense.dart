@@ -22,20 +22,18 @@ class _Expense_applyState extends State<Expense_apply> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _commentsController = TextEditingController();
-  final TextEditingController _imageController = TextEditingController();
   List<String> expense_category = ["A", "B", "C"];
 
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
-  File? _imageFile;  // Store the selected image
-  String? _selectedImagePath;
+  List<File>? _imageFiles = [];  // Store multiple images
 
   // Validator for checking if End Date is later than Start Date
   String? _validateDateRange() {
     if (_startdateController.text.isNotEmpty &&
         _enddateController.text.isNotEmpty) {
       DateTime fromDate =
-          DateFormat('dd/MM/yyyy').parse(_startdateController.text);
+      DateFormat('dd/MM/yyyy').parse(_startdateController.text);
       DateTime toDate = DateFormat('dd/MM/yyyy').parse(_enddateController.text);
 
       if (toDate.isBefore(fromDate)) {
@@ -45,7 +43,7 @@ class _Expense_applyState extends State<Expense_apply> {
     return null;
   }
 
-  Future<void> sendUserDataToDB(String imageUrl) async {
+  Future<void> sendUserDataToDB(List<String> imageUrls) async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     var currentUser = _auth.currentUser;
 
@@ -65,7 +63,7 @@ class _Expense_applyState extends State<Expense_apply> {
         "Comments": _commentsController.text,
         "submittedAt": FieldValue.serverTimestamp(),
         "status": "Pending",
-        "imageUrl": imageUrl,
+        "imageUrls": imageUrls,  // Store the list of image URLs
       });
 
       // Optionally, show success message or toast
@@ -93,39 +91,39 @@ class _Expense_applyState extends State<Expense_apply> {
     }
   }
 
+  Future<List<String>> uploadImagesToFirebase() async {
+    List<String> imageUrls = [];
 
-  Future<String> uploadImageToFirebase() async {
-    if (_imageFile != null) {
-      // Create a reference to Firebase Storage
+    if (_imageFiles != null && _imageFiles!.isNotEmpty) {
       FirebaseStorage storage = FirebaseStorage.instance;
-      Reference ref = storage.ref().child('expense_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-      try {
-        // Upload the image file
-        await ref.putFile(_imageFile!);
+      for (var file in _imageFiles!) {
+        Reference ref = storage.ref().child('expense_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-        // Get the image URL
-        String imageUrl = await ref.getDownloadURL();
-        return imageUrl;
-      } catch (e) {
-        Fluttertoast.showToast(
-          msg: "Image upload failed: $e",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-        throw Exception("Image upload failed: $e");
+        try {
+          // Upload the image file
+          await ref.putFile(file);
+
+          // Get the image URL
+          String imageUrl = await ref.getDownloadURL();
+          imageUrls.add(imageUrl);  // Add the URL to the list
+        } catch (e) {
+          Fluttertoast.showToast(
+            msg: "Image upload failed: $e",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0,
+          );
+          throw Exception("Image upload failed: $e");
+        }
       }
-    } else {
-      throw Exception("No image selected.");
     }
+
+    return imageUrls;  // Return the list of URLs
   }
-
-
-
 
   void _submitForm() async {
     try {
@@ -162,16 +160,16 @@ class _Expense_applyState extends State<Expense_apply> {
           isLoading = true; // Set loading state
         });
 
-        String imageUrl = '';
-        if (_imageFile != null) {
-          imageUrl = await uploadImageToFirebase();
+        List<String> imageUrls = [];
+        if (_imageFiles != null && _imageFiles!.isNotEmpty) {
+          imageUrls = await uploadImagesToFirebase();  // Upload multiple images and get their URLs
         }
 
         // Simulate a form submission with a delay (e.g., API call)
         await Future.delayed(Duration(seconds: 2));
 
         // Send data to DB
-        await sendUserDataToDB(imageUrl);
+        await sendUserDataToDB(imageUrls);
 
         setState(() {
           isLoading = false;
@@ -185,7 +183,7 @@ class _Expense_applyState extends State<Expense_apply> {
         _amountController.clear();
         _commentsController.clear();
         setState(() {
-          _imageFile = null; // Reset image selection
+          _imageFiles = []; // Reset image selection
         });
 
         // Show a success toast if submission is successful
@@ -204,7 +202,6 @@ class _Expense_applyState extends State<Expense_apply> {
           MaterialPageRoute(
               builder: (context) => BottomNavController(initialIndex: 1)),
         );
-
       }
     } catch (e) {
       // Catch any errors that occur during form submission
@@ -223,14 +220,13 @@ class _Expense_applyState extends State<Expense_apply> {
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImages() async {
     final ImagePicker _picker = ImagePicker();
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final List<XFile>? pickedFiles = await _picker.pickMultiImage();  // Pick multiple images
 
-    if (pickedFile != null) {
+    if (pickedFiles != null) {
       setState(() {
-        _imageController.text = pickedFile.name;
-        _selectedImagePath = pickedFile.path;
+        _imageFiles = pickedFiles.map((pickedFile) => File(pickedFile.path)).toList();  // Store the selected images
       });
     }
   }
@@ -320,124 +316,103 @@ class _Expense_applyState extends State<Expense_apply> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your last day of expense';
+                      return 'Please select the expense date';
                     }
                     return null;
                   },
                 ),
                 SizedBox(height: 16),
-                TextFormField(
-                  controller: _categoryController,
+                DropdownButtonFormField<String>(
+                  value: expense_category.first,
+                  items: expense_category.map((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _categoryController.text = newValue!;
+                    });
+                  },
                   decoration: InputDecoration(
                     labelText: 'Expense Category',
-                    suffixIcon: DropdownButton<String>(
-                      items: expense_category.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                          onTap: () {
-                            setState(() {
-                              _categoryController.text = value;
-                            });
-                          },
-                        );
-                      }).toList(),
-                      onChanged: (_) {},
-                    ),
+                    border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please provide a reason for your expense';
-                    }
-                    return null;
-                  },
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   controller: _amountController,
+                  keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'Expense Amount',
-                    suffixIcon: Icon(Icons
-                        .attach_money), // You can add a money icon or any relevant icon
+                    labelText: 'Amount',
+                    border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType
-                      .number, // This ensures only numbers can be input
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please provide an amount for your expense';
-                    }
-                    // You can add additional validation to check if the input is a valid number
-                    try {
-                      double.parse(value);
-                    } catch (e) {
-                      return 'Please enter a valid number';
+                      return 'Please enter the amount';
                     }
                     return null;
                   },
                 ),
                 SizedBox(height: 16),
                 TextFormField(
-                  controller:
-                      _commentsController, // Use a controller for the comments text field
+                  controller: _commentsController,
                   decoration: InputDecoration(
-                    labelText: 'Comments', // Set the label to "Comments"
-                    hintText:
-                        'Enter your comments here', // Optional: Set a hint for the user
-                    border:
-                        OutlineInputBorder(), // Optional: Add a border around the text field
+                    labelText: 'Comments',
+                    border: OutlineInputBorder(),
                   ),
-                  maxLines:
-                      3, // Allows the user to type multiple lines (can be adjusted based on your needs)
-                  keyboardType:
-                      TextInputType.text, // Text input type for general text
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please provide your comments';
+                      return 'Please add some comments';
                     }
                     return null;
                   },
                 ),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: _imageController,  // The controller for displaying the file name
-                  decoration: InputDecoration(
-                    labelText: 'Attach Image',  // Label for the image field
-                    hintText:
-                    'Click the icon to upload attachment',
-                    border: OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      onPressed: _pickImage,  // Trigger image picker when icon is pressed
-                      icon: Icon(Icons.image),  // Display image icon
+                SizedBox(height: 16),
+                // Image selection widget
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 70.0),
+                  child: ElevatedButton(
+                    onPressed: _pickImages,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blue,
+                      padding: EdgeInsets.symmetric(vertical: 20.0),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text('Select Images', style: TextStyle(color: Colors.white),),
+                        SizedBox(width: 10,),
+                        Icon(Icons.add_a_photo, color: Colors.white,)
+                      ],
                     ),
                   ),
-                  readOnly: true,  // Make the TextFormField read-only to prevent typing
                 ),
+                if (_imageFiles != null && _imageFiles!.isNotEmpty)
+                  Column(
+                    children: _imageFiles!.map((file) {
+                      return Image.file(file, height: 150, width: 150);
+                    }).toList(),
+                  ),
                 SizedBox(height: 16),
-                if (_imageFile != null)
-                  Image.file(_imageFile!, height: 150, width: 150),
-                SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : _submitForm, // Disable the button when loading
+                  onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blue,
                     padding: EdgeInsets.symmetric(vertical: 20.0),
                     textStyle: TextStyle(fontSize: 16),
                   ),
                   child: isLoading
-                      ? CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white), // Color for the indicator
-                        )
-                      : Text(
-                          'Submit',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text('Submit',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),),
                 ),
               ],
             ),
