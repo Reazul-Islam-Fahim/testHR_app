@@ -74,6 +74,7 @@ class _NotifyState extends State<Notify> {
           title: const Center(
             child: Text(
               'Notification',
+              style: TextStyle(color: Colors.white),
             ),
           ),
           backgroundColor: AppColors.blue,
