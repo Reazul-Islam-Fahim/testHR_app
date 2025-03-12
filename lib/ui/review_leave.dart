@@ -18,17 +18,19 @@ class _LeaveReviewState extends State<LeaveReview> {
       child: Scaffold(
         appBar: AppBar(
           title: Center(
-            child: Text('Leave Review'),
+            child: Text('Leave Review',
+              style: TextStyle(color: Colors.white),),
           ),
           backgroundColor: AppColors.blue,
           automaticallyImplyLeading: false,
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
+            color: Colors.white,
             onPressed: () {
               // Navigate to another page when the back arrow is pressed
               Navigator.pushReplacement(
                 context,
-                CupertinoPageRoute(
+                MaterialPageRoute(
                     builder: (context) => BottomNavController(
                       initialIndex: 4,
                     )),
