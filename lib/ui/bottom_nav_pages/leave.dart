@@ -127,6 +127,7 @@ class _LeaveState extends State<Leave> {
           title: Center(
             child: Text(
               'Leave Report',
+              style: TextStyle(color: Colors.white),
             ),
           ),
           backgroundColor: AppColors.blue,
