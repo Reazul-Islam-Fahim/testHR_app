@@ -91,25 +91,22 @@ class _UserFormState extends State<UserForm> {
                     ),
                   ),
                 ),
-                TextField(
-                  controller: _genderController,
-                  readOnly: true,
+                DropdownButtonFormField<String>(
+                  value: gender.first,
+                  items: gender.map((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _genderController.text = newValue!;
+                    });
+                  },
                   decoration: InputDecoration(
-                    hintText: "choose your gender",
-                    suffixIcon: DropdownButton<String>(
-                      items: gender.map((String value) {
-                        return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                        onTap: () {
-                        setState(() {
-                        _genderController.text = value;
-                        });
-                        },
-                        );
-                      }).toList(),
-                      onChanged: (_) {},
-                    ),
+                    labelText: 'Expense Category',
+                    border: OutlineInputBorder(),
                   ),
                 ),
         
