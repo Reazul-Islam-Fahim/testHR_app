@@ -195,8 +195,12 @@ class _Leave_applyState extends State<Leave_apply> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
+          iconTheme: IconThemeData(
+            color: Colors.white,  // Set the color of the leading icon to white
+          ),
           title: Center(
-            child: Text('Apply for leave'),
+            child: Text('Apply for leave',
+              style: TextStyle(color: Colors.white),),
           ),
           backgroundColor: AppColors.blue,
         ),
@@ -242,31 +246,23 @@ class _Leave_applyState extends State<Leave_apply> {
                   },
                 ),
                 SizedBox(height: 16),
-                TextFormField(
-                  controller: _reasonController,
+                DropdownButtonFormField<String>(
+                  value: leave_category.first,
+                  items: leave_category.map((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _reasonController.text = newValue!;
+                    });
+                  },
                   decoration: InputDecoration(
                     labelText: 'Leave Category',
-                    suffixIcon: DropdownButton<String>(
-                      items: leave_category.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                          onTap: () {
-                            setState(() {
-                              _reasonController.text = value;
-                            });
-                          },
-                        );
-                      }).toList(),
-                      onChanged: (_) {},
-                    ),
+                    border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please provide a reason for your leave';
-                    }
-                    return null;
-                  },
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
