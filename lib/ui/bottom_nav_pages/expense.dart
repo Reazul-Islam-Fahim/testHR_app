@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // For efficient image loading
 import '../../const/AppColors.dart';
 import '../apply_Expense.dart';
 
@@ -34,9 +35,9 @@ class _ExpenseState extends State<Expense> {
           .collection("expense-requests");
 
       QuerySnapshot querySnapshot =
-          await ExpenseCollection.orderBy("submittedAt", descending: true)
-              .limit(_currentRowCount)
-              .get();
+      await ExpenseCollection.orderBy("submittedAt", descending: true)
+          .limit(_currentRowCount)
+          .get();
 
       _hasMoreData = querySnapshot.docs.length == _currentRowCount;
 
@@ -131,6 +132,7 @@ class _ExpenseState extends State<Expense> {
           title: Center(
             child: Text(
               'Expense Report',
+              style: TextStyle(color: Colors.white),
             ),
           ),
           backgroundColor: AppColors.blue,
@@ -143,108 +145,137 @@ class _ExpenseState extends State<Expense> {
             children: [
               ExpenseData.isEmpty
                   ? isLoading
-                      ? Center(child: CircularProgressIndicator())
-                      : Center(
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                              Image.asset('assets/images/no_data.jpg'),
-                            ]))
+                  ? Center(child: CircularProgressIndicator())
+                  : Center(
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.asset('assets/images/no_data.jpg'),
+                      ]))
                   : ListView.builder(
-                      shrinkWrap: true,
-                      physics:
-                          NeverScrollableScrollPhysics(), // Disable ListView's scrolling
-                      itemCount: ExpenseData.length,
-                      itemBuilder: (context, index) {
-                        final expense = ExpenseData[index];
-                        return Container(
-                          margin: EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 5), // Add horizontal margin
-                          decoration: BoxDecoration(
-                            color: Colors.white, // White background
-                            borderRadius:
-                                BorderRadius.circular(10), // Radial border
-                            boxShadow: [
-                              // Add a subtle shadow for elevation
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            title:
-                                Text('Category: ${expense['Category'] ?? ''}'),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                    'Start Date: ${expense['Start Date'] ?? ''}'),
-                                Text('End Date: ${expense['End Date'] ?? ''}'),
-                                Text('Amount: ${expense['Amount'] ?? ''}'),
-                                Text(
-                                    'Status: ${expense['status'] ?? 'Pending'}'),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                expense['status'] == 'Pending'
-                                    ? Icons.delete
-                                    : Icons.check_circle_outline,
-                                color: expense['status'] == 'Pending'
-                                    ? Colors.red
-                                    : Colors.green,
-                              ),
-                              onPressed: expense['status'] == 'Pending'
-                                  ? () async {
-                                      bool confirmDelete = await showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title:
-                                                Text('Delete Expense Request'),
-                                            content: Text(
-                                                'Are you sure you want to delete this Expense request?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context)
-                                                      .pop(true);
-                                                },
-                                                child: Text('Yes'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context)
-                                                      .pop(false);
-                                                },
-                                                child: Text('No'),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-
-                                      if (confirmDelete) {
-                                        await _deleteExpenseData(expense['id']);
-                                      }
-                                    }
-                                  : null,
-                            ),
-                            onTap: expense['status'] == 'Pending'
-                                ? () {
-                                    _showEditDialog(
-                                        expense); // Function to handle edit dialog
-                                  }
-                                : null,
-                          ),
-                        );
-                      },
+                shrinkWrap: true,
+                physics:
+                NeverScrollableScrollPhysics(), // Disable ListView's scrolling
+                itemCount: ExpenseData.length,
+                itemBuilder: (context, index) {
+                  final expense = ExpenseData[index];
+                  return Container(
+                    margin: EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 5), // Add horizontal margin
+                    decoration: BoxDecoration(
+                      color: Colors.white, // White background
+                      borderRadius:
+                      BorderRadius.circular(10), // Radial border
+                      boxShadow: [
+                        // Add a subtle shadow for elevation
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
                     ),
+                    child: ListTile(
+                      title: Text('Category: ${expense['Category'] ?? ''}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Start Date: ${expense['Start Date'] ?? ''}'),
+                          Text('End Date: ${expense['End Date'] ?? ''}'),
+                          Text('Amount: ${expense['Amount'] ?? ''}'),
+                          Text('Status: ${expense['status'] ?? 'Pending'}'),
+                          // Check if the image URL is available
+                          if (expense['imageUrls'] != null && expense['imageUrls'] is List && expense['imageUrls'].isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                // Show images in full screen or navigate to a new screen
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text('View Attachments'),
+                                      content: SingleChildScrollView(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // Loop through all image URLs and display each one
+                                            for (var imageUrl in expense['imageUrls'])
+                                              CachedNetworkImage(
+                                                imageUrl: imageUrl,
+                                                placeholder: (context, url) =>
+                                                    Center(child: CircularProgressIndicator()),
+                                                errorWidget: (context, url, error) => Icon(Icons.error),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: Text(
+                                'View Attachments',
+                                style: TextStyle(
+                                  color: AppColors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: Icon(
+                          expense['status'] == 'Pending'
+                              ? Icons.delete
+                              : Icons.check_circle_outline,
+                          color: expense['status'] == 'Pending'
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                        onPressed: expense['status'] == 'Pending'
+                            ? () async {
+                          bool confirmDelete = await showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Delete Expense Request'),
+                                content: Text(
+                                    'Are you sure you want to delete this Expense request?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(true);
+                                    },
+                                    child: Text('Yes'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(false);
+                                    },
+                                    child: Text('No'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+
+                          if (confirmDelete) {
+                            await _deleteExpenseData(expense['id']);
+                          }
+                        }
+                            : null,
+                      ),
+                      onTap: expense['status'] == 'Pending'
+                          ? () {
+                        _showEditDialog(expense); // Function to handle edit dialog
+                      }
+                          : null,
+                    ),
+                  );
+                },
+              ),
               if (_hasMoreData)
                 ElevatedButton(
                   onPressed: () {
@@ -295,11 +326,11 @@ class _ExpenseState extends State<Expense> {
     // and call _updateExpenseData with the updated values.
     // Example:
     TextEditingController startDateController =
-        TextEditingController(text: expense['Start Date']);
+    TextEditingController(text: expense['Start Date']);
     TextEditingController endDateController =
-        TextEditingController(text: expense['End Date']);
+    TextEditingController(text: expense['End Date']);
     TextEditingController amountController =
-        TextEditingController(text: expense['Amount']);
+    TextEditingController(text: expense['Amount']);
     String category = expense['Category'];
 
     await showDialog(
