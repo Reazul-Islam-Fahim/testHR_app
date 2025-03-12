@@ -102,7 +102,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Change Password'),
+          iconTheme: IconThemeData(
+            color: Colors.white,  // Set the color of the leading icon to white
+          ),
+          title: Text('Change Password',
+            style: TextStyle(color: Colors.white),),
           backgroundColor: AppColors.blue,
         ),
         body: Padding(
