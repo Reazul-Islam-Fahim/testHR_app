@@ -112,7 +112,7 @@ class _AttendanceReviewState extends State<AttendanceReview> {
         appBar: AppBar(
           title: Center(
             child: Text(
-              'Expense Review',
+              'Attendance Review',
               style: TextStyle(color: Colors.white),
             ),
           ),
