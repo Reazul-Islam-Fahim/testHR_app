@@ -5,6 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:test_app/ui/bottom_nav_controller.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class Expense_apply extends StatefulWidget {
   const Expense_apply({super.key});
@@ -19,10 +22,13 @@ class _Expense_applyState extends State<Expense_apply> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _commentsController = TextEditingController();
+  final TextEditingController _imageController = TextEditingController();
   List<String> expense_category = ["A", "B", "C"];
 
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
+  File? _imageFile;  // Store the selected image
+  String? _selectedImagePath;
 
   // Validator for checking if End Date is later than Start Date
   String? _validateDateRange() {
@@ -39,7 +45,7 @@ class _Expense_applyState extends State<Expense_apply> {
     return null;
   }
 
-  Future<void> sendUserDataToDB() async {
+  Future<void> sendUserDataToDB(String imageUrl) async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     var currentUser = _auth.currentUser;
 
@@ -59,6 +65,7 @@ class _Expense_applyState extends State<Expense_apply> {
         "Comments": _commentsController.text,
         "submittedAt": FieldValue.serverTimestamp(),
         "status": "Pending",
+        "imageUrl": imageUrl,
       });
 
       // Optionally, show success message or toast
@@ -85,6 +92,40 @@ class _Expense_applyState extends State<Expense_apply> {
       debugPrint('Error occurred during submission: $e');
     }
   }
+
+
+  Future<String> uploadImageToFirebase() async {
+    if (_imageFile != null) {
+      // Create a reference to Firebase Storage
+      FirebaseStorage storage = FirebaseStorage.instance;
+      Reference ref = storage.ref().child('expense_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      try {
+        // Upload the image file
+        await ref.putFile(_imageFile!);
+
+        // Get the image URL
+        String imageUrl = await ref.getDownloadURL();
+        return imageUrl;
+      } catch (e) {
+        Fluttertoast.showToast(
+          msg: "Image upload failed: $e",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+        throw Exception("Image upload failed: $e");
+      }
+    } else {
+      throw Exception("No image selected.");
+    }
+  }
+
+
+
 
   void _submitForm() async {
     try {
@@ -121,11 +162,31 @@ class _Expense_applyState extends State<Expense_apply> {
           isLoading = true; // Set loading state
         });
 
+        String imageUrl = '';
+        if (_imageFile != null) {
+          imageUrl = await uploadImageToFirebase();
+        }
+
         // Simulate a form submission with a delay (e.g., API call)
         await Future.delayed(Duration(seconds: 2));
 
         // Send data to DB
-        await sendUserDataToDB();
+        await sendUserDataToDB(imageUrl);
+
+        setState(() {
+          isLoading = false;
+        });
+
+        // Reset form fields
+        _formKey.currentState!.reset();
+        _startdateController.clear();
+        _enddateController.clear();
+        _categoryController.clear();
+        _amountController.clear();
+        _commentsController.clear();
+        setState(() {
+          _imageFile = null; // Reset image selection
+        });
 
         // Show a success toast if submission is successful
         Fluttertoast.showToast(
@@ -138,15 +199,12 @@ class _Expense_applyState extends State<Expense_apply> {
           fontSize: 16.0,
         );
 
-        // Reset the form fields to refresh the page
-        setState(() {
-          _formKey.currentState!.reset();
-          _startdateController.clear();
-          _enddateController.clear();
-          _categoryController.clear();
-          _amountController.clear();
-          _commentsController.clear();
-        });
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => BottomNavController(initialIndex: 1)),
+        );
+
       }
     } catch (e) {
       // Catch any errors that occur during form submission
@@ -163,11 +221,18 @@ class _Expense_applyState extends State<Expense_apply> {
         fontSize: 16.0,
       );
     }
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-          builder: (context) => BottomNavController(initialIndex: 1)),
-    );
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageController.text = pickedFile.name;
+        _selectedImagePath = pickedFile.path;
+      });
+    }
   }
 
   Future<void> _selectStartDateFromPicker(BuildContext context) async {
@@ -211,8 +276,11 @@ class _Expense_applyState extends State<Expense_apply> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
+          iconTheme: IconThemeData(
+            color: Colors.white,  // Set the color of the leading icon to white
+          ),
           title: Center(
-            child: Text('Apply for Expense'),
+            child: Text('Apply for Expense', style: TextStyle(color: Colors.white,),),
           ),
           backgroundColor: AppColors.blue,
         ),
@@ -329,6 +397,24 @@ class _Expense_applyState extends State<Expense_apply> {
                     return null;
                   },
                 ),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _imageController,  // The controller for displaying the file name
+                  decoration: InputDecoration(
+                    labelText: 'Attach Image',  // Label for the image field
+                    hintText:
+                    'Click the icon to upload attachment',
+                    border: OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      onPressed: _pickImage,  // Trigger image picker when icon is pressed
+                      icon: Icon(Icons.image),  // Display image icon
+                    ),
+                  ),
+                  readOnly: true,  // Make the TextFormField read-only to prevent typing
+                ),
+                SizedBox(height: 16),
+                if (_imageFile != null)
+                  Image.file(_imageFile!, height: 150, width: 150),
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: isLoading
