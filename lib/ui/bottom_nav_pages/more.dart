@@ -25,6 +25,7 @@ class _MoreState extends State<More> {
   String? _designation;
   bool _isLoading = false;
   bool _hasError = false;
+  bool hasPendingRequests = false;
 
   Future<void> _fetchUserData() async {
     setState(() {
@@ -92,10 +93,26 @@ class _MoreState extends State<More> {
     }
   }
 
+  Future<void> checkPendingRequests() async {
+    // Replace with your API endpoint
+    final response = await http.get(Uri.parse('http://192.168.3.228:4000/api/leave-requests'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      setState(() {
+        // Check if any leave request has status "Pending"
+        hasPendingRequests = data.any((item) => item['status'] == 'Pending');
+      });
+    } else {
+      throw Exception('Failed to load leave requests');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _fetchUserData();
+    checkPendingRequests();
   }
 
   @override
@@ -292,32 +309,49 @@ class _MoreState extends State<More> {
                           color: Colors.white,
                           borderRadius: BorderRadius.all(Radius.circular(20)),
                         ),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.all(10),
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Leave Review',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
+                        child: Stack(
+                          children: [
+                            ListTile(
+                              contentPadding: EdgeInsets.all(10),
+                              title: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Leave Review',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                ],
+                              ),
+                              leading: Icon(Icons.article, color: AppColors.blue),
+                              trailing: Icon(Icons.arrow_forward_ios,
+                                  color: AppColors.blue),
+                              onTap: () {
+                                // Replace with your Leave Review page
+                                Navigator.pushReplacement(
+                                    context,
+                                    CupertinoPageRoute(
+                                        builder: (context) =>
+                                            LeaveReview(onStatusUpdated: checkPendingRequests))); //change to correct page
+                              },
+                            ),
+                            if (hasPendingRequests)
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              )
-                            ],
-                          ),
-                          leading: Icon(Icons.article, color: AppColors.blue),
-                          trailing: Icon(Icons.arrow_forward_ios,
-                              color: AppColors.blue),
-                          onTap: () {
-                            // Replace with your Leave Review page
-                            Navigator.pushReplacement(
-                                context,
-                                CupertinoPageRoute(
-                                    builder: (context) =>
-                                        LeaveReview())); //change to correct page
-                          },
-                        ),
+                              ),
+                          ],
+                        )
                       ),
                       SizedBox(height: 20),
                       Container(
