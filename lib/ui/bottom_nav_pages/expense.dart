@@ -34,7 +34,7 @@ class _ExpenseState extends State<Expense> {
     final ImagePicker picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
 
-    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+    if (pickedFiles.isNotEmpty) {
       setState(() {
         _pickedImages = pickedFiles.map((file) => File(file.path)).toList();
       });
