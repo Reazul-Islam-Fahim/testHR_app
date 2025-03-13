@@ -96,7 +96,8 @@ class _MoreState extends State<More> {
 
   Future<void> checkPendingLeaves() async {
     // Replace with your API endpoint
-    final response = await http.get(Uri.parse('http://192.168.3.228:4000/api/leave-requests'));
+    final response = await http
+        .get(Uri.parse('http://192.168.3.228:4000/api/leave-requests'));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -111,7 +112,8 @@ class _MoreState extends State<More> {
 
   Future<void> checkPendingExpenses() async {
     // Replace with your API endpoint
-    final response = await http.get(Uri.parse('http://192.168.3.228:3000/api/expense-requests'));
+    final response = await http
+        .get(Uri.parse('http://192.168.3.228:3000/api/expense-requests'));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -283,8 +285,9 @@ class _MoreState extends State<More> {
                     SizedBox(
                       height: 20,
                     ),
-                    if (_designation?.toLowerCase() == 'manager' || _designation?.toLowerCase() == 'admin')
-                      if(_designation?.toLowerCase() == 'admin') ...[
+                    if (_designation?.toLowerCase() == 'manager' ||
+                        _designation?.toLowerCase() == 'admin')
+                      if (_designation?.toLowerCase() == 'admin') ...[
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -304,7 +307,8 @@ class _MoreState extends State<More> {
                                 )
                               ],
                             ),
-                            leading: Icon(Icons.edit_calendar_outlined, color: AppColors.blue),
+                            leading: Icon(Icons.edit_calendar_outlined,
+                                color: AppColors.blue),
                             trailing: Icon(Icons.arrow_forward_ios,
                                 color: AppColors.blue),
                             onTap: () {
@@ -319,109 +323,111 @@ class _MoreState extends State<More> {
                         ),
                         SizedBox(height: 20),
                       ],
-                      // Wrap conditional widgets in a List<Widget>
-                      ...<Widget>[
+                    // Wrap conditional widgets in a List<Widget>
+                    ...<Widget>[
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                        ),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            ListTile(
-                              contentPadding: EdgeInsets.all(10),
-                              title: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Leave Review',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                ],
-                              ),
-                              leading: Icon(Icons.article, color: AppColors.blue),
-                              trailing: Icon(Icons.arrow_forward_ios,
-                                  color: AppColors.blue),
-                              onTap: () {
-                                // Replace with your Leave Review page
-                                Navigator.pushReplacement(
-                                    context,
-                                    CupertinoPageRoute(
-                                        builder: (context) =>
-                                            LeaveReview(onStatusUpdated: checkPendingLeaves))); //change to correct page
-                              },
-                            ),
-                            if (hasPendingLeave)
-                              Positioned(
-                                right: 8,
-                                top: -4,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        )
-                      ),
-                      SizedBox(height: 20),
-                        Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.all(Radius.circular(20)),
-                            ),
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                ListTile(
-                                  contentPadding: EdgeInsets.all(10),
-                                  title: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Expense Review',
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  leading: Icon(Icons.article, color: AppColors.blue),
-                                  trailing: Icon(Icons.arrow_forward_ios,
-                                      color: AppColors.blue),
-                                  onTap: () {
-                                    // Replace with your Leave Review page
-                                    Navigator.pushReplacement(
-                                        context,
-                                        CupertinoPageRoute(
-                                            builder: (context) =>
-                                                ExpenseReview(onStatusUpdated: checkPendingExpenses))); //change to correct page
-                                  },
-                                ),
-                                if (hasPendingLeave)
-                                  Positioned(
-                                    right: 8,
-                                    top: -4,
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              ListTile(
+                                contentPadding: EdgeInsets.all(10),
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Leave Review',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
                                       ),
+                                    )
+                                  ],
+                                ),
+                                leading:
+                                    Icon(Icons.article, color: AppColors.blue),
+                                trailing: Icon(Icons.arrow_forward_ios,
+                                    color: AppColors.blue),
+                                onTap: () {
+                                  // Replace with your Leave Review page
+                                  Navigator.pushReplacement(
+                                      context,
+                                      CupertinoPageRoute(
+                                          builder: (context) => LeaveReview(
+                                              onStatusUpdated:
+                                                  checkPendingLeaves))); //change to correct page
+                                },
+                              ),
+                              if (hasPendingLeave)
+                                Positioned(
+                                  right: 8,
+                                  top: -4,
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
-                              ],
-                            )
-                        ),
+                                ),
+                            ],
+                          )),
+                      SizedBox(height: 20),
+                      Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              ListTile(
+                                contentPadding: EdgeInsets.all(10),
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Expense Review',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                leading:
+                                    Icon(Icons.article, color: AppColors.blue),
+                                trailing: Icon(Icons.arrow_forward_ios,
+                                    color: AppColors.blue),
+                                onTap: () {
+                                  // Replace with your Leave Review page
+                                  Navigator.pushReplacement(
+                                      context,
+                                      CupertinoPageRoute(
+                                          builder: (context) => ExpenseReview(
+                                              onStatusUpdated:
+                                                  checkPendingExpenses))); //change to correct page
+                                },
+                              ),
+                              if (hasPendingExpenses)
+                                Positioned(
+                                  right: 8,
+                                  top: -4,
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          )),
                       SizedBox(height: 20),
                     ],
                     Container(
