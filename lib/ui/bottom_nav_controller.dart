@@ -5,20 +5,23 @@ import 'package:test_app/ui/bottom_nav_pages/expense.dart';
 import 'package:test_app/ui/bottom_nav_pages/home.dart';
 import 'package:test_app/ui/bottom_nav_pages/more.dart';
 import 'package:test_app/ui/bottom_nav_pages/notification.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BottomNavController extends StatefulWidget {
-
   final int initialIndex; // The initial index for the BottomNavigationBar
 
-  const BottomNavController({Key? key, this.initialIndex = 2}) : super(key: key);
+  const BottomNavController({Key? key, this.initialIndex = 2})
+      : super(key: key);
 
   @override
   _BottomNavControllerState createState() => _BottomNavControllerState();
 }
 
 class _BottomNavControllerState extends State<BottomNavController> {
-
   late int _currentIndex;
+  bool hasPendingLeave = false;
+  bool hasPendingExpenses = false;
 
   final _pages = [
     Leave(),
@@ -27,10 +30,47 @@ class _BottomNavControllerState extends State<BottomNavController> {
     Notify(),
     More(),
   ];
+
+  Future<void> checkPendingLeaves() async {
+    // Replace with your API endpoint
+    final response = await http
+        .get(Uri.parse('http://192.168.3.228:4000/api/leave-requests'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      setState(() {
+        // Check if any leave request has status "Pending"
+        hasPendingLeave = data.any((item) => item['status'] == 'Pending');
+      });
+    } else {
+      throw Exception('Failed to load leave requests');
+    }
+  }
+
+  Future<void> checkPendingExpenses() async {
+    // Replace with your API endpoint
+    final response = await http
+        .get(Uri.parse('http://192.168.3.228:3000/api/expense-requests'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      setState(() {
+        // Check if any expense request has status "Pending"
+        hasPendingExpenses = data.any((item) => item['status'] == 'Pending');
+      });
+    } else {
+      throw Exception('Failed to load expense requests');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex; // Set the initial index passed from constructor
+    _currentIndex =
+        widget.initialIndex; // Set the initial index passed from constructor
+    // Call the functions to check for pending requests
+    checkPendingLeaves();
+    checkPendingExpenses();
   }
 
   @override
@@ -62,10 +102,35 @@ class _BottomNavControllerState extends State<BottomNavController> {
               icon: Icon(Icons.notifications),
               label: "Notification",
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.more_horiz),
-              label: "More",
-            ),
+            if (hasPendingLeave ||
+                hasPendingExpenses)
+              BottomNavigationBarItem(
+                icon: Stack(
+                  children: [
+                    Icon(Icons.more_horiz),
+                    Positioned(
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(1),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 12,
+                          minHeight: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                label: "More",
+              )
+            else
+              BottomNavigationBarItem(
+                icon: Icon(Icons.more_horiz),
+                label: "More",
+              ),
           ],
           onTap: (index) {
             setState(() {
