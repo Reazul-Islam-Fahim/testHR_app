@@ -261,6 +261,7 @@ class _HomeState extends State<Home> {
         // Show alert dialog if outside the office
         showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
               title: Text('Office Location'),
