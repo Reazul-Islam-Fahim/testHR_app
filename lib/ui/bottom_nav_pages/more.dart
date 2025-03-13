@@ -25,7 +25,7 @@ class _MoreState extends State<More> {
   String? _designation;
   bool _isLoading = false;
   bool _hasError = false;
-  bool hasPendingRequests = false;
+  bool hasPendingLeaveRequests = false;
 
   Future<void> _fetchUserData() async {
     setState(() {
@@ -101,7 +101,7 @@ class _MoreState extends State<More> {
       final List<dynamic> data = json.decode(response.body);
       setState(() {
         // Check if any leave request has status "Pending"
-        hasPendingRequests = data.any((item) => item['status'] == 'Pending');
+        hasPendingLeaveRequests = data.any((item) => item['status'] == 'Pending');
       });
     } else {
       throw Exception('Failed to load leave requests');
@@ -310,6 +310,7 @@ class _MoreState extends State<More> {
                           borderRadius: BorderRadius.all(Radius.circular(20)),
                         ),
                         child: Stack(
+                          clipBehavior: Clip.none,
                           children: [
                             ListTile(
                               contentPadding: EdgeInsets.all(10),
@@ -337,10 +338,10 @@ class _MoreState extends State<More> {
                                             LeaveReview(onStatusUpdated: checkPendingRequests))); //change to correct page
                               },
                             ),
-                            if (hasPendingRequests)
+                            if (hasPendingLeaveRequests)
                               Positioned(
                                 right: 8,
-                                top: 8,
+                                top: -4,
                                 child: Container(
                                   width: 12,
                                   height: 12,
