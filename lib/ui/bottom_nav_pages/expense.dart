@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart'; // For Firebase storage
 import 'dart:io';
 import '../../const/AppColors.dart';
 import '../apply_Expense.dart';
+import '../bottom_nav_controller.dart';
 
 class Expense extends StatefulWidget {
   const Expense({super.key});
@@ -162,10 +163,10 @@ class _ExpenseState extends State<Expense> {
                   children: [
                     TextField(
                         controller: startDateController,
-                        decoration: InputDecoration(labelText: 'Start Date')),
+                        decoration: InputDecoration(labelText: 'Start Date (DD/MM/YYYY)')),
                     TextField(
                         controller: endDateController,
-                        decoration: InputDecoration(labelText: 'End Date')),
+                        decoration: InputDecoration(labelText: 'End Date (DD/MM/YYYY)')),
                     TextField(
                         controller: amountController,
                         keyboardType: TextInputType.number,
@@ -222,7 +223,7 @@ class _ExpenseState extends State<Expense> {
                           expense['id'], 'imageUrls', imageUrls as String);
                     }
 
-                    Navigator.of(context).pop();
+                    Navigator.push(context, MaterialPageRoute(builder: (context)=> BottomNavController(initialIndex: 1,),),);
                   },
                   child: Text('Save'),
                 ),
@@ -387,7 +388,7 @@ class _ExpenseState extends State<Expense> {
                             : null,
                       ),
                       onTap: expense['status'] == 'Pending'
-                          ? () {
+                          ? () async {
                         _showEditDialog(expense);
                       }
                           : null,
