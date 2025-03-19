@@ -63,7 +63,6 @@ class _HomeState extends State<Home> {
     });
   }
 
-
   Future<void> _fetchUserData() async {
     setState(() {
       _isLoading = true;
@@ -72,7 +71,9 @@ class _HomeState extends State<Home> {
 
     try {
       // Replace with your API URL to fetch user data
-      final response = await http.get(Uri.parse('http://192.168.3.228:7000/get-user-data'));
+      final response = await http.get(
+        Uri.parse('http://192.168.3.228:7000/get-user-data'),
+      );
 
       if (response.statusCode == 200) {
         // Parse the JSON response
@@ -97,24 +98,26 @@ class _HomeState extends State<Home> {
     }
   }
 
-
-
   // Fetch leave data from API
   Future<void> fetchLeaveData() async {
     try {
-      final response =
-          await http.get(Uri.parse('http://192.168.3.228:8000/api/leave-data'));
+      final response = await http.get(
+        Uri.parse('http://192.168.3.228:8000/api/leave-data'),
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
-          leaveData = data
-              .map((item) => {
-                    'Leave Type': item['leaveType'],
-                    'Total Leave': item['totalLeave'],
-                    'Availed': item['availed'],
-                    'Balance': item['balance'],
-                  })
-              .toList();
+          leaveData =
+              data
+                  .map(
+                    (item) => {
+                      'Leave Type': item['leaveType'],
+                      'Total Leave': item['totalLeave'],
+                      'Availed': item['availed'],
+                      'Balance': item['balance'],
+                    },
+                  )
+                  .toList();
           print("Data load successful");
         });
       } else {
@@ -136,12 +139,13 @@ class _HomeState extends State<Home> {
         if (userDoc.exists) {
           employeeId = userDoc['employee_id'];
           String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-          DocumentSnapshot doc = await firestore
-              .collection('attendance')
-              .doc(employeeId)
-              .collection('days')
-              .doc(currentDate)
-              .get();
+          DocumentSnapshot doc =
+              await firestore
+                  .collection('attendance')
+                  .doc(employeeId)
+                  .collection('days')
+                  .doc(currentDate)
+                  .get();
 
           if (doc.exists) {
             setState(() {
@@ -161,7 +165,6 @@ class _HomeState extends State<Home> {
     }
   }
 
-
   Future<void> _saveState(String attendanceStatus, Position geoPosition) async {
     try {
       setState(() => isLoading = true);
@@ -171,7 +174,8 @@ class _HomeState extends State<Home> {
 
       if (user != null) {
         // Fetch user document from Firestore
-        DocumentSnapshot userDoc = await firestore.collection('users-form-data').doc(user.email).get();
+        DocumentSnapshot userDoc =
+            await firestore.collection('users-form-data').doc(user.email).get();
 
         if (userDoc.exists) {
           // Retrieve employee data
@@ -187,17 +191,18 @@ class _HomeState extends State<Home> {
               .collection('days')
               .doc(currentDate)
               .set({
-            'isSwitched': isSwitched,
-            'inTimeCaptured': inTimeCaptured,
-            'outTimeCaptured': outTimeCaptured,
-            'inTime': inTime,
-            'outTime': outTime,
-            'location': location,
-            'latitude': geoPosition.latitude,
-            'longitude': geoPosition.longitude,
-            'attendanceStatus': attendanceStatus, // Store inside/outside status
-            'timestamp': getCurrentDateTime(),
-          });
+                'isSwitched': isSwitched,
+                'inTimeCaptured': inTimeCaptured,
+                'outTimeCaptured': outTimeCaptured,
+                'inTime': inTime,
+                'outTime': outTime,
+                'location': location,
+                'latitude': geoPosition.latitude,
+                'longitude': geoPosition.longitude,
+                'attendanceStatus':
+                    attendanceStatus, // Store inside/outside status
+                'timestamp': getCurrentDateTime(),
+              });
 
           print('Attendance status saved: $attendanceStatus');
         }
@@ -212,8 +217,6 @@ class _HomeState extends State<Home> {
     List<int> charCodes = employeeId.codeUnits;
     print("Character Codes: $charCodes");
   }
-
-
 
   Future<Position> _getLocation() async {
     // Office location (replace with actual coordinates)
@@ -270,7 +273,10 @@ class _HomeState extends State<Home> {
                 TextButton(
                   onPressed: () async {
                     // If inside office, proceed with "inside" status
-                    await _saveState('inside', geoPosition); // Pass 'inside' status
+                    await _saveState(
+                      'inside',
+                      geoPosition,
+                    ); // Pass 'inside' status
 
                     Navigator.of(context).pop();
                   },
@@ -279,7 +285,10 @@ class _HomeState extends State<Home> {
                 TextButton(
                   onPressed: () async {
                     // If outside office, proceed with "outside" status
-                    await _saveState('outside', geoPosition); // Pass 'outside' status
+                    await _saveState(
+                      'outside',
+                      geoPosition,
+                    ); // Pass 'outside' status
 
                     Navigator.of(context).pop();
                   },
@@ -295,10 +304,11 @@ class _HomeState extends State<Home> {
         });
       }
 
-      print('Location fetched: Latitude: ${geoPosition.latitude}, Longitude: ${geoPosition.longitude}');
+      print(
+        'Location fetched: Latitude: ${geoPosition.latitude}, Longitude: ${geoPosition.longitude}',
+      );
 
       return geoPosition;
-
     } catch (e) {
       print('Failed to get location: $e');
       setState(() {
@@ -307,8 +317,6 @@ class _HomeState extends State<Home> {
       return Future.error('Failed to get location');
     }
   }
-
-
 
   Future<void> checkPermissions() async {
     LocationPermission permission = await Geolocator.checkPermission();
@@ -329,11 +337,8 @@ class _HomeState extends State<Home> {
   String _getCurrentDayOfMonth() => DateFormat('dd').format(DateTime.now());
   String _getCurrentMonthName() => DateFormat('MMMM').format(DateTime.now());
 
-
-
   // New async function to handle the switch change
   Future<void> _handleSwitchChange(bool val) async {
-
     Position? geoPosition;
 
     // First update the UI state inside setState without async operations
@@ -366,14 +371,18 @@ class _HomeState extends State<Home> {
 
     // After fetching location, save the state
     if (geoPosition != null) {
-      String attendanceStatus = isSwitched ? 'inside' : 'outside'; // Determine status based on switch state
-      await _saveState(attendanceStatus, geoPosition); // Pass the status and geoPosition to _saveState()
+      String attendanceStatus =
+          isSwitched
+              ? 'inside'
+              : 'outside'; // Determine status based on switch state
+      await _saveState(
+        attendanceStatus,
+        geoPosition,
+      ); // Pass the status and geoPosition to _saveState()
     } else {
       print('Failed to fetch location.');
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -396,141 +405,165 @@ class _HomeState extends State<Home> {
                   ),
                   Positioned(
                     top: 20,
-                    child: Column(children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.white,
-                        backgroundImage: _imageUrl != null
-                            ? NetworkImage(_imageUrl!) // Use the image URL from the API
-                            : AssetImage('assets/images/user1.jpg') as ImageProvider, // Placeholder image
-                        child: _imageUrl == null && !_isLoading && !_hasError // Show camera icon if no image
-                            ? Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 30,
-                        )
-                            : null,
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: _isLoading
-                            ? CircularProgressIndicator() // Loading indicator while data is being fetched
-                            : _hasError
-                            ? Text("Error loading user data", style: TextStyle(color: Colors.red)) // Error message
-                            : Text(
-                          _userName ?? 'User Name', // Display user name or fallback
-                          style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.white,
+                          backgroundImage:
+                              _imageUrl != null
+                                  ? NetworkImage(
+                                    _imageUrl!,
+                                  ) // Use the image URL from the API
+                                  : AssetImage('assets/images/user1.jpg')
+                                      as ImageProvider, // Placeholder image
+                          child:
+                              _imageUrl == null &&
+                                      !_isLoading &&
+                                      !_hasError // Show camera icon if no image
+                                  ? Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 30,
+                                  )
+                                  : null,
                         ),
-                          softWrap: true, // Automatically wraps the text
-                          overflow: TextOverflow
-                              .ellipsis, // Adds ellipsis if text overflows
-                          maxLines: 2,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height /
-                            5, // Adds space from left and right
-                        color: Colors.transparent,
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                flex: 1, // 1 part of the total 3
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(20)),
+                        SizedBox(height: 20),
+                        Container(
+                          width: MediaQuery.of(context).size.width,
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          child:
+                              _isLoading
+                                  ? CircularProgressIndicator() // Loading indicator while data is being fetched
+                                  : _hasError
+                                  ? Text(
+                                    "Error loading user data",
+                                    style: TextStyle(color: Colors.red),
+                                  ) // Error message
+                                  : Text(
+                                    _userName ??
+                                        'User Name', // Display user name or fallback
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                    softWrap:
+                                        true, // Automatically wraps the text
+                                    overflow:
+                                        TextOverflow
+                                            .ellipsis, // Adds ellipsis if text overflows
+                                    maxLines: 2,
                                   ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      // First child container inside the left red container
-                                      Expanded(
-                                        flex: 1,
-                                        child: Container(
-                                          color: Colors.transparent,
-                                          margin: EdgeInsets.only(top: 20),
-                                          child: Center(
-                                              child: Text(
-                                                  _getCurrentDayOfWeek(),
-                                                  style: TextStyle(
-                                                      color: Colors.black,
-                                                      fontWeight:
-                                                          FontWeight.w100,
-                                                      fontSize: 18))),
-                                        ),
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          width: MediaQuery.of(context).size.width,
+                          height:
+                              MediaQuery.of(context).size.height /
+                              4, // Adds space from left and right
+                          color: Colors.transparent,
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(20),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  flex: 1, // 1 part of the total 3
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(20),
                                       ),
-                                      // Second child container inside the left red container
-                                      Expanded(
-                                        flex: 2,
-                                        child: Container(
-                                          color: Colors.transparent,
-                                          child: Center(
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        // First child container inside the left red container
+                                        Expanded(
+                                          flex: 1,
+                                          child: Container(
+                                            color: Colors.transparent,
+                                            margin: EdgeInsets.only(top: 20),
+                                            child: Center(
                                               child: Text(
-                                                  _getCurrentDayOfMonth(),
-                                                  style: TextStyle(
-                                                      color: Colors.black,
-                                                      fontWeight:
-                                                          FontWeight.w900,
-                                                      fontSize: 35))),
+                                                _getCurrentDayOfWeek(),
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.w100,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      // Third child container inside the left red container
-                                      Expanded(
-                                        flex: 1,
-                                        child: Container(
-                                          color: Colors.transparent,
-                                          margin: EdgeInsets.only(bottom: 20),
-                                          child: Center(
+                                        // Second child container inside the left red container
+                                        Expanded(
+                                          flex: 2,
+                                          child: Container(
+                                            color: Colors.transparent,
+                                            child: Center(
                                               child: Text(
-                                                  _getCurrentMonthName(),
-                                                  style: TextStyle(
-                                                      color: Colors.black,
-                                                      fontWeight:
-                                                          FontWeight.w100,
-                                                      fontSize: 18))),
+                                                _getCurrentDayOfMonth(),
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 35,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        // Third child container inside the left red container
+                                        Expanded(
+                                          flex: 1,
+                                          child: Container(
+                                            color: Colors.transparent,
+                                            margin: EdgeInsets.only(bottom: 20),
+                                            child: Center(
+                                              child: Text(
+                                                _getCurrentMonthName(),
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.w100,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              // Right Container with 2/3 width and green color
-                              Expanded(
-                                flex: 2, // 2 parts of the total 3
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(20)),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Expanded(
+                                // Right Container with 2/3 width and green color
+                                Expanded(
+                                  flex: 2, // 2 parts of the total 3
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(20),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Expanded(
                                           flex: 1,
                                           child: Row(
                                             mainAxisAlignment:
@@ -543,27 +576,31 @@ class _HomeState extends State<Home> {
                                                 child: Container(
                                                   height: 50,
                                                   margin: EdgeInsets.only(
-                                                      top: 10,
-                                                      bottom: 10,
-                                                      left: 15,
-                                                      right: 5),
+                                                    top: 10,
+                                                    bottom: 10,
+                                                    left: 15,
+                                                    right: 5,
+                                                  ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     borderRadius:
                                                         BorderRadius.all(
-                                                            Radius.circular(
-                                                                10)),
+                                                          Radius.circular(10),
+                                                        ),
                                                     boxShadow: [
                                                       BoxShadow(
                                                         color: Colors.black
                                                             .withOpacity(
-                                                                0.2), // Shadow color
+                                                              0.2,
+                                                            ), // Shadow color
                                                         spreadRadius:
                                                             3, // Spread of the shadow
                                                         blurRadius:
                                                             5, // Blur effect of the shadow
-                                                        offset: Offset(0,
-                                                            4), // Offset of the shadow (x, y)
+                                                        offset: Offset(
+                                                          0,
+                                                          4,
+                                                        ), // Offset of the shadow (x, y)
                                                       ),
                                                     ],
                                                   ),
@@ -585,27 +622,31 @@ class _HomeState extends State<Home> {
                                                 child: Container(
                                                   height: 50,
                                                   margin: EdgeInsets.only(
-                                                      top: 10,
-                                                      bottom: 10,
-                                                      left: 10,
-                                                      right: 10),
+                                                    top: 10,
+                                                    bottom: 10,
+                                                    left: 10,
+                                                    right: 10,
+                                                  ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     borderRadius:
                                                         BorderRadius.all(
-                                                            Radius.circular(
-                                                                10)),
+                                                          Radius.circular(10),
+                                                        ),
                                                     boxShadow: [
                                                       BoxShadow(
                                                         color: Colors.black
                                                             .withOpacity(
-                                                                0.2), // Shadow color
+                                                              0.2,
+                                                            ), // Shadow color
                                                         spreadRadius:
                                                             3, // Spread of the shadow
                                                         blurRadius:
                                                             5, // Blur effect of the shadow
-                                                        offset: Offset(0,
-                                                            4), // Offset of the shadow (x, y)
+                                                        offset: Offset(
+                                                          0,
+                                                          4,
+                                                        ), // Offset of the shadow (x, y)
                                                       ),
                                                     ],
                                                   ),
@@ -627,27 +668,31 @@ class _HomeState extends State<Home> {
                                                 child: Container(
                                                   height: 50,
                                                   margin: EdgeInsets.only(
-                                                      top: 10,
-                                                      bottom: 10,
-                                                      left: 5,
-                                                      right: 15),
+                                                    top: 10,
+                                                    bottom: 10,
+                                                    left: 5,
+                                                    right: 15,
+                                                  ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     borderRadius:
                                                         BorderRadius.all(
-                                                            Radius.circular(
-                                                                10)),
+                                                          Radius.circular(10),
+                                                        ),
                                                     boxShadow: [
                                                       BoxShadow(
                                                         color: Colors.black
                                                             .withOpacity(
-                                                                0.2), // Shadow color
+                                                              0.2,
+                                                            ), // Shadow color
                                                         spreadRadius:
                                                             3, // Spread of the shadow
                                                         blurRadius:
                                                             5, // Blur effect of the shadow
-                                                        offset: Offset(0,
-                                                            4), // Offset of the shadow (x, y)
+                                                        offset: Offset(
+                                                          0,
+                                                          4,
+                                                        ), // Offset of the shadow (x, y)
                                                       ),
                                                     ],
                                                   ),
@@ -663,23 +708,25 @@ class _HomeState extends State<Home> {
                                                     ),
                                                   ),
                                                 ),
-                                              )
+                                              ),
                                             ],
-                                          )),
-                                      Expanded(
-                                        flex: 1,
-                                        child: Center(child: Text(' ')),
-                                      ),
-                                    ],
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: Center(child: Text(' ')),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ]),
-                  )
+                      ],
+                    ),
+                  ),
                 ],
               ),
               Column(
@@ -687,44 +734,61 @@ class _HomeState extends State<Home> {
                   // Conditionally render the switch or the text
                   if (!(inTimeCaptured &&
                       outTimeCaptured)) // Show the switch only if both times are not captured
+                  ...[
                     isLoading
                         ? Center(
-                            child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.blue)))
-                        : Container(
-                            alignment: Alignment.centerRight,
-                            padding: EdgeInsets.only(
-                              right: 60,
-                              top: 30,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.blue,
                             ),
-                            child: Transform.scale(
-                              scale: 2,
-                              child: Switch(
-                                value: isSwitched,
-                                onChanged: (val) async{
-                                  await _handleSwitchChange(val);
-                                },
-                                activeTrackColor: Colors.red,
-                                activeColor: Colors.white,
-                                inactiveTrackColor: Colors.green,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                splashRadius: 0,
-                                inactiveThumbImage:
-                                    AssetImage('assets/images/in.png'),
-                                activeThumbImage:
-                                    AssetImage('assets/images/out.png'),
+                          ),
+                        )
+                        : Container(
+                          alignment: Alignment.centerRight,
+                          padding: EdgeInsets.only(right: 60, top: 60),
+                          child: Transform.scale(
+                            scale: 2,
+                            child: Switch(
+                              value: isSwitched,
+                              onChanged: (val) async {
+                                await _handleSwitchChange(val);
+                              },
+                              activeTrackColor: Colors.red,
+                              activeColor: Colors.white,
+                              inactiveTrackColor: Colors.green,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              splashRadius: 0,
+                              inactiveThumbImage: AssetImage(
+                                'assets/images/in.png',
+                              ),
+                              activeThumbImage: AssetImage(
+                                'assets/images/out.png',
                               ),
                             ),
                           ),
+                        ),
+                  ] else ...[
+                    Padding(
+                      padding: EdgeInsets.only(left: 80, top: 80),
+                      child: Text(
+                        'Attendance Provided!',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepOrange,
+                        ),
+                      ),
+                    ),
+                  ],
                   // Show text if both IN and OUT times are captured
                   Container(
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.all(20),
-                    margin: !(inTimeCaptured && outTimeCaptured)
-                        ? EdgeInsets.only(left: 20, right: 20, top: 60)
-                        : EdgeInsets.only(left: 20, right: 20, top: 130),
+                    margin:
+                        !(inTimeCaptured && outTimeCaptured)
+                            ? EdgeInsets.only(left: 20, right: 20, top: 80)
+                            : EdgeInsets.only(left: 20, right: 20, top: 180),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -737,13 +801,14 @@ class _HomeState extends State<Home> {
                           child: Column(
                             children: [
                               // Show "IN TIME"
-                              Text('IN TIME: ',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                'IN TIME: ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               SizedBox(height: 10),
-                              Text(inTime.isEmpty
-                                  ? 'Not set'
-                                  : inTime), // Show stored IN time
+                              Text(
+                                inTime.isEmpty ? 'Not set' : inTime,
+                              ), // Show stored IN time
                               SizedBox(height: 20),
                             ],
                           ),
@@ -752,13 +817,14 @@ class _HomeState extends State<Home> {
                           child: Column(
                             children: [
                               // Show "OUT TIME"
-                              Text('OUT TIME: ',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                'OUT TIME: ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               SizedBox(height: 10),
-                              Text(outTime.isEmpty
-                                  ? 'Not set'
-                                  : outTime), // Show stored OUT time
+                              Text(
+                                outTime.isEmpty ? 'Not set' : outTime,
+                              ), // Show stored OUT time
                               SizedBox(height: 20),
                             ],
                           ),
@@ -805,46 +871,49 @@ class _HomeState extends State<Home> {
                     ),
                     child: Center(
                       child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Leave Balance',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Leave Balance',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
-                            SizedBox(
-                              height: 20,
+                          ),
+                          SizedBox(height: 20),
+                          FittedBox(
+                            fit: BoxFit.contain,
+                            child: DataTable(
+                              columns: const [
+                                DataColumn(label: Text('Leave Type')),
+                                DataColumn(label: Text('Total Leave')),
+                                DataColumn(label: Text('Availed')),
+                                DataColumn(label: Text('Balance')),
+                              ],
+                              rows:
+                                  leaveData.map((data) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(Text(data['Leave Type'])),
+                                        DataCell(
+                                          Text(data['Total Leave'].toString()),
+                                        ),
+                                        DataCell(
+                                          Text(data['Availed'].toString()),
+                                        ),
+                                        DataCell(
+                                          Text(data['Balance'].toString()),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                             ),
-                            FittedBox(
-                              fit: BoxFit.contain,
-                              child: DataTable(
-                                columns: const [
-                                  DataColumn(label: Text('Leave Type')),
-                                  DataColumn(label: Text('Total Leave')),
-                                  DataColumn(label: Text('Availed')),
-                                  DataColumn(label: Text('Balance')),
-                                ],
-                                rows: leaveData.map((data) {
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(data['Leave Type'])),
-                                      DataCell(
-                                          Text(data['Total Leave'].toString())),
-                                      DataCell(
-                                          Text(data['Availed'].toString())),
-                                      DataCell(
-                                          Text(data['Balance'].toString())),
-                                    ],
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ]),
+                          ),
+                        ],
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ],
